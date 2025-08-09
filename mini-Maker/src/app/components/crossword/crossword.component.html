@@ -14,7 +14,6 @@
               <div class="crossword-cell black-cell"></div>
             } @else {
               <input
-                class="crossword-cell"
                 type="text"
                 [value]="cell.value"
                 [disabled]="!cell.isEditable"
@@ -24,7 +23,6 @@
                 maxlength="1"
                 (input)="onCellInput(cell, $event)"
                 (keydown)="onCellKeydown(cell, $event)"
-                (focus)="$event.target.select()"
               />
             }
           }
@@ -39,6 +37,29 @@
       <button type="button" (click)="clearPuzzle()" class="btn btn-secondary">
         Clear
       </button>
+      <button type="button" (click)="findSolutions()" class="btn btn-success" [disabled]="isFindingSolutions()">
+        @if (isFindingSolutions()) {
+          Finding Solutions...
+        } @else {
+          Find Solutions
+        }
+      </button>
     </div>
+
+    @if (solutions().length > 0) {
+      <div class="solutions-section">
+        <h3>Found {{ solutions().length }} Solutions</h3>
+        <div class="solutions-list">
+          @for (solution of solutions(); track $index) {
+            <div class="solution-item">
+              <span class="solution-number">Solution {{ $index + 1 }}:</span>
+              <button type="button" (click)="applySolution($index)" class="btn btn-small">
+                Apply
+              </button>
+            </div>
+          }
+        </div>
+      </div>
+    }
   }
 </div> 

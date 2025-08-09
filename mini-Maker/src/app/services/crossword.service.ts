@@ -18,15 +18,30 @@ export interface CrosswordData {
   };
 }
 
+export interface GridSolutionRequest {
+  grid: string[][];
+}
+
+export interface GridSolutionResponse {
+  solutions: string[][][];
+  solution_count: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CrosswordService {
   private readonly http = inject(HttpClient);
+  private readonly apiUrl = 'http://localhost:5000/api';
 
   getCrossword(): Observable<CrosswordData> {
     // Replace with your actual backend endpoint
-    return this.http.get<CrosswordData>('/api/crossword');
+    return this.http.get<CrosswordData>(`${this.apiUrl}/crossword`);
+  }
+
+  findGridSolutions(grid: string[][]): Observable<GridSolutionResponse> {
+    const request: GridSolutionRequest = { grid };
+    return this.http.post<GridSolutionResponse>(`${this.apiUrl}/find_grid_solutions`, request);
   }
 
   parseGrid(grid: string[][]): CrosswordCell[][] {

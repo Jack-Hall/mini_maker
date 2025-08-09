@@ -1,7 +1,7 @@
 import { Component, inject, OnInit, signal } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CrosswordService, CrosswordCell, CrosswordData } from '../../services/crossword.service';
+import { CrosswordService, CrosswordCell, CrosswordData, GridSolutionResponse } from '../../services/crossword.service';
 
 @Component({
   selector: 'app-crossword',
@@ -16,12 +16,14 @@ export class CrosswordComponent implements OnInit {
   protected readonly crosswordGrid = signal<CrosswordCell[][]>([]);
   protected readonly isLoading = signal(true);
   protected readonly error = signal<string | null>(null);
+  protected readonly solutions = signal<string[][][]>([]);
+  protected readonly isFindingSolutions = signal(false);
 
   ngOnInit(): void {
     this.loadCrossword();
   }
 
-   loadCrossword(): void {
+  loadCrossword(): void {
     this.isLoading.set(true);
     this.error.set(null);
 
@@ -29,11 +31,11 @@ export class CrosswordComponent implements OnInit {
     // In production, use: this.crosswordService.getCrossword()
     const mockData: CrosswordData = {
       grid: [
-        ['+', '_', '_', '_', '_'],
         ['_', '_', '_', '_', '_'],
         ['_', '_', '_', '_', '_'],
         ['_', '_', '_', '_', '_'],
-        ['_', '_', '_', '_', '+']
+        ['_', '_', '_', '_', '_'],
+        ['_', '_', '_', '_', '_']
       ]
     };
 
@@ -149,6 +151,49 @@ export class CrosswordComponent implements OnInit {
       row.forEach(cell => {
         if (cell.isEditable) {
           cell.value = '';
+        }
+      });
+    });
+    this.crosswordGrid.set([...grid]);
+    this.solutions.set([]);
+  }
+
+  protected findSolutions(): void {
+    this.isFindingSolutions.set(true);
+    this.error.set(null);
+
+    // Convert the crossword grid to the format expected by the API
+    const grid = this.crosswordGrid();
+    const apiGrid = grid.map(row => 
+      row.map(cell => {
+        if (cell.isBlack) return '+';
+        return cell.value || '_';
+      })
+    );
+
+    this.crosswordService.findGridSolutions(apiGrid).subscribe({
+      next: (response: GridSolutionResponse) => {
+        this.solutions.set(response.solutions);
+        this.isFindingSolutions.set(false);
+        console.log(`Found ${response.solution_count} solutions`);
+      },
+      error: (err) => {
+        this.error.set(`Error finding solutions: ${err.message}`);
+        this.isFindingSolutions.set(false);
+        console.error('Error finding solutions:', err);
+      }
+    });
+  }
+
+  protected applySolution(solutionIndex: number): void {
+    const solution = this.solutions()[solutionIndex];
+    if (!solution) return;
+
+    const grid = this.crosswordGrid();
+    solution.forEach((row, rowIndex) => {
+      row.forEach((cell, colIndex) => {
+        if (grid[rowIndex] && grid[rowIndex][colIndex] && grid[rowIndex][colIndex].isEditable) {
+          grid[rowIndex][colIndex].value = cell;
         }
       });
     });
