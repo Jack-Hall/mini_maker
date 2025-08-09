@@ -29,11 +29,11 @@ export class CrosswordComponent implements OnInit {
     // In production, use: this.crosswordService.getCrossword()
     const mockData: CrosswordData = {
       grid: [
+        ['+', '_', '_', '_', '_'],
         ['_', '_', '_', '_', '_'],
         ['_', '_', '_', '_', '_'],
         ['_', '_', '_', '_', '_'],
-        ['_', '_', '_', '_', '_'],
-        ['_', '_', '_', '_', '_']
+        ['_', '_', '_', '_', '+']
       ]
     };
 
