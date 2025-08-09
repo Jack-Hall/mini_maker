@@ -1,5 +1,6 @@
 import numpy as np
 import ipdb
+import copy
 chars = "abcdefghijklmnopqrstuvwxyz"
 
 #turn into char list
@@ -20,21 +21,30 @@ class WordSet:
         #find all words that match the pattern
         num_wildcards = pattern.count("_")
         matching_sets = []
-
+        if num_wildcards == length:
+            return self.words
         for i, char in enumerate(pattern):
             if pattern[i] != "_":
                 matching_sets.append(self.top_level_sets[i][char])
-
+        if len(matching_sets) == 0:
+            return []
         #get the intersection to find all matching words
         matching_words = set.intersection(*matching_sets)
         return matching_words
 
 class Grid:
-    def __init__(self):
+    def __init__(self, grid=None, words=None):
         self.size = 5
+        self.words = words
         #create char array of size 5x5
         #allowed characters are a-z, _, +
-        self.grid = np.array([['_' for _ in range(5)] for _ in range(5)])
+        if grid is None:
+            self.grid = np.array([['_' for _ in range(5)] for _ in range(5)])
+        else:
+            self.grid = grid
+
+        self.wordSet = WordSet(self.words)
+        self.solutions = []
         #words are indices noting the start and end of the word in the grid. 
         #words can be horizontal or vertical.
 
@@ -84,11 +94,61 @@ class Grid:
         (0,4),
         (4,4)
         ),
-        )] 
+        ] 
     
+
+    def find_grid_solutions(self):
+        #find all solutions to the grid.
+        #for each word, find all possible solutions.
+        incomplete = False
+        for word in self.words:
+            #find all incomplete words in the grid.
+            word_str = self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1]
+            if self.get_word_direction(word) == "vertical":
+                word_str = word_str.T
+            word_str = "".join(word_str.flatten())
+
+            if len(self.solutions) > 1000:
+                return
+            if word_str.find("_") != -1:
+                incomplete = True
+                word_lookup = self.wordSet.word_lookup(word_str)
+                if len(word_lookup) == 0:
+                    return
+                for new_word in word_lookup:
+                    if len(self.solutions) > 1000:
+                        return
+                    self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1] = np.array(list(new_word))
+                    #check if puzzle is valid:
+                    if not self.is_valid_puzzle():
+                       continue
+
+                    print("adding word", new_word, "solution length", len(self.solutions))
+                    print(self.grid)
+                    self.find_grid_solutions()
+                    self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1] = np.array(list(word_str))
+        if not incomplete:
+            self.solutions.append(copy.deepcopy(self.grid))
+            return 
+        
+
     def set_char(self, row, col, char):
         self.grid[row][col] = char
     
+
+    def get_word_direction(self, word):
+        #get the direction of the word.
+        #if the first coordinate is less than the second, it is horizontal.
+        #if the first coordinate is greater than the second, it is vertical.
+        if word[0][0] < word[1][0]:
+            return "horizontal"
+        else:
+            return "vertical"
+
+    def get_word_length(self, word):
+        #get the length of the word.
+        return abs(word[0][0] - word[1][0]) + 1
+
     def get_char(self, row, col):
         return self.grid[row][col]
     
@@ -122,12 +182,23 @@ def compute_all_sets(words):
 
     return top_level_sets
 
+
+def setup_test_grid():
+    words = ["shant", 'cedar','olive','flees','fouls']
+    #turn into 2d np char array
+    grid = np.array([[char for char in word] for word in words])
+    return Grid(grid,words)
+
+
 if __name__ == "__main__":
     data = "backend/words_alpha.txt"
     words = preprocess_data(data)
     #save the words to a txt file.
     top_level_sets = compute_all_sets(words)
     word_set = WordSet(words)
+    grid = Grid(words=words)
+    grid.find_grid_solutions()
+    print(len(grid.solutions))
     ipdb.set_trace()
     with open("short_words.txt", "w") as file:
         for word in words:

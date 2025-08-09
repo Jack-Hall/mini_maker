@@ -3,6 +3,11 @@
   margin: 0 auto;
   padding: 20px;
   font-family: 'Arial', sans-serif;
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+  min-height: 100vh;
+  justify-content: center;
 }
 
 .crossword-container h2 {
@@ -36,6 +41,7 @@
   width: 50px;
   height: 50px;
   border: 1px solid #ccc;
+  display: flex;
   align-items: center;
   justify-content: center;
   box-sizing: border-box;
@@ -45,12 +51,16 @@
 .crossword-cell input {
   width: 50px;
   height: 50px;
-  border: 1px solid #ccc;
-  align-items: center;
-  justify-content: center;
+  border: none;
+  background: transparent;
+  text-align: center;
+  font-size: 20px;
+  font-weight: bold;
+  text-transform: uppercase;
+  outline: none;
   box-sizing: border-box;
-  flex: 0 0 50px;
-
+  padding: 0;
+  margin: 0;
 }
 
 .black-cell {
