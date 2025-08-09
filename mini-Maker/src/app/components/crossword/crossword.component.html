@@ -1,0 +1,43 @@
+<div class="crossword-container">
+  <h2>Mini Crossword</h2>
+  
+  @if (isLoading()) {
+    <div class="loading">Loading crossword...</div>
+  } @else if (error()) {
+    <div class="error">{{ error() }}</div>
+  } @else {
+    <div class="crossword-grid">
+      @for (row of crosswordGrid(); track $index) {
+        <div class="crossword-row">
+          @for (cell of row; track $index) {
+            @if (cell.isBlack) {
+              <div class="crossword-cell black-cell"></div>
+            } @else {
+              <input
+                type="text"
+                [value]="cell.value"
+                [disabled]="!cell.isEditable"
+                [class]="getCellClass(cell)"
+                [attr.data-row]="cell.row"
+                [attr.data-col]="cell.col"
+                maxlength="1"
+                (input)="onCellInput(cell, $event)"
+                (keydown)="onCellKeydown(cell, $event)"
+                (focus)="$event.target.select()"
+              />
+            }
+          }
+        </div>
+      }
+    </div>
+    
+    <div class="crossword-controls">
+      <button type="button" (click)="loadCrossword()" class="btn btn-primary">
+        New Puzzle
+      </button>
+      <button type="button" (click)="clearPuzzle()" class="btn btn-secondary">
+        Clear
+      </button>
+    </div>
+  }
+</div> 

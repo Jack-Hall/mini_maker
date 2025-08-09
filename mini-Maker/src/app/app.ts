@@ -1,9 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
+import { CrosswordComponent } from './components/crossword/crossword.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet],
+  imports: [RouterOutlet, CrosswordComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })
