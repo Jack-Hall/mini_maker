@@ -102,6 +102,8 @@ class Grid:
         #for each word, find all possible solutions.
         incomplete = False
         for word in self.words:
+            if self.get_word_direction(word) == "vertical":
+                continue
             #find all incomplete words in the grid.
             word_str = self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1]
             if self.get_word_direction(word) == "vertical":
@@ -115,22 +117,52 @@ class Grid:
                 word_lookup = self.wordSet.word_lookup(word_str)
                 if len(word_lookup) == 0:
                     return
+                
+                if not self.is_valid_puzzle(word, word_str):
+                    continue
                 for new_word in word_lookup:
-                    if len(self.solutions) > 1000:
+                    if len(self.solutions) > 32:
                         return
-                    self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1] = np.array(list(new_word))
+                    if self.get_word_direction(word) == "vertical":
+                        # For vertical words, reshape to column vector
+                        word_array = np.array(list(new_word)).reshape(-1, 1)
+                        self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1] = word_array.T
+                    else:
+                        # For horizontal words, reshape to row vector
+                        word_array = np.array(list(new_word)).reshape(1, -1)
+                        self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1] = word_array.T
                     #check if puzzle is valid:
-                    if not self.is_valid_puzzle():
-                       continue
 
-                    print("adding word", new_word, "solution length", len(self.solutions))
-                    print(self.grid)
+                    # print("adding word", new_word, "solution length", len(self.solutions))
                     self.find_grid_solutions()
-                    self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1] = np.array(list(word_str))
-        if not incomplete:
+                    # Also fix the restoration of the original word
+                    if self.get_word_direction(word) == "vertical":
+                        word_array = np.array(list(word_str)).reshape(-1, 1)
+                        self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1] = word_array.T
+                    else:
+                        word_array = np.array(list(word_str)).reshape(1, -1)
+                        self.grid[word[0][0]:word[1][0]+1, word[0][1]:word[1][1]+1] = word_array.T
+                return
+        if not incomplete and self.is_valid_puzzle(word, word_str):
             self.solutions.append(copy.deepcopy(self.grid))
+            print("solution length", len(self.solutions))
+            print(self.solutions)
             return 
         
+    def is_valid_puzzle(self, word, word_str):
+        #for all words with a wildcard excluding the current word
+        for words_to_check in self.words:
+            if words_to_check == word:
+                continue
+            word_str_to_check = self.grid[words_to_check[0][0]:words_to_check[1][0]+1, words_to_check[0][1]:words_to_check[1][1]+1]
+            if self.get_word_direction(words_to_check) == "vertical":
+                word_str_to_check = word_str_to_check.T
+            word_str_to_check = "".join(word_str_to_check.flatten())
+            if  len(self.wordSet.word_lookup(word_str_to_check)) == 0:
+                return False
+
+        return True
+
 
     def set_char(self, row, col, char):
         self.grid[row][col] = char
@@ -183,11 +215,11 @@ def compute_all_sets(words):
     return top_level_sets
 
 
-def setup_test_grid():
-    words = ["shant", 'cedar','olive','flees','fouls']
+def setup_test_grid(wordstr):
+    words = ["shant", 'cedar','_____','flees','fouls']
     #turn into 2d np char array
     grid = np.array([[char for char in word] for word in words])
-    return Grid(grid,words)
+    return Grid(grid,wordstr)
 
 
 if __name__ == "__main__":
@@ -196,7 +228,8 @@ if __name__ == "__main__":
     #save the words to a txt file.
     top_level_sets = compute_all_sets(words)
     word_set = WordSet(words)
-    grid = Grid(words=words)
+    grid = setup_test_grid(words)
+    # grid = Grid(words=words)
     grid.find_grid_solutions()
     print(len(grid.solutions))
     ipdb.set_trace()
