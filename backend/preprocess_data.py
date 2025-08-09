@@ -29,6 +29,72 @@ class WordSet:
         matching_words = set.intersection(*matching_sets)
         return matching_words
 
+class Grid:
+    def __init__(self):
+        self.size = 5
+        #create char array of size 5x5
+        #allowed characters are a-z, _, +
+        self.grid = np.array([['_' for _ in range(5)] for _ in range(5)])
+        #words are indices noting the start and end of the word in the grid. 
+        #words can be horizontal or vertical.
+
+        #dummy init for now, just make every row and column a word.
+        self.words = [
+        #rows
+        (
+            (0,0),
+            (0,4)
+        ),
+        (
+         (1,0),
+         (1,4),
+         ),
+         (
+             
+         (2,0),
+         (2,4),
+         ),
+         (
+         (3,0),
+         (3,4),
+         ),
+         (
+         (4,0),
+         (4,4)
+        ),
+        #columns
+        #    
+        (
+        (0,0),
+        (4,0)
+        ),
+        (
+        (0,1),
+        (4,1)
+        ),
+        (
+        (0,2),
+        (4,2)
+        ),
+        (
+        (0,3),
+        (4,3)
+        ),
+        (
+        (0,4),
+        (4,4)
+        ),
+        )] 
+    
+    def set_char(self, row, col, char):
+        self.grid[row][col] = char
+    
+    def get_char(self, row, col):
+        return self.grid[row][col]
+    
+
+
+
 def preprocess_data(data):
     #load the txt file. 
     with open(data, 'r') as file:
