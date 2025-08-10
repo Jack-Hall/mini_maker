@@ -51,10 +51,10 @@
         <div class="clues-section">
           <h3>Across</h3>
           <div class="clues-list">
-            @for (clue of puzzle()!.clues.across | keyvalue; track clue.key) {
+            @for (clue of across_clues(); track $index) {
               <div class="clue-item">
-                <span class="clue-number">{{ clue.key }}.</span>
-                <span class="clue-text">{{ clue.value }}</span>
+                <span class="clue-number">{{ $index + 1 }}.</span>
+                <span class="clue-text">{{ clue.clue }}</span>
               </div>
             }
           </div>
@@ -63,10 +63,10 @@
         <div class="clues-section">
           <h3>Down</h3>
           <div class="clues-list">
-            @for (clue of puzzle()!.clues.down | keyvalue; track clue.key) {
+            @for (clue of down_clues(); track $index) {
               <div class="clue-item">
-                <span class="clue-number">{{ clue.key }}.</span>
-                <span class="clue-text">{{ clue.value }}</span>
+                <span class="clue-number">{{ $index + 1 }}.</span>
+                <span class="clue-text">{{ clue.clue }}</span>
               </div>
             }
           </div>

@@ -27,7 +27,7 @@ export class PuzzleSolverComponent {
   
   protected readonly puzzle = signal<CrosswordGrid | null>(null);
   protected readonly across_clues = computed<Clue[]>(()  => this.get_across_clues(this.puzzle()))
-  protected readonly down_clues = computed<Clue[]>()
+  protected readonly down_clues = computed<Clue[]>(()  => this.get_across_clues(this.puzzle()))
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly userSolution = signal<string[][]>([]);
@@ -54,6 +54,7 @@ export class PuzzleSolverComponent {
     this.http.get<CrosswordGrid>('/api/play')
       .subscribe({
         next: (data) => {
+          console.log(data)
           this.puzzle.set(data);
           this.initializeUserSolution(data.grid);
           this.loading.set(false);

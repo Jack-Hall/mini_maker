@@ -1,4 +1,4 @@
- from flask import Flask, request, jsonify
+from flask import Flask, request, jsonify
 from flask_cors import CORS
 import numpy as np
 from preprocess_data import Grid, WordSet, preprocess_data
@@ -8,19 +8,62 @@ app = Flask(__name__)
 CORS(app)  # Enable CORS for all routes
 
 # Load word data and create WordSet instance
-words = preprocess_data("backend/words_alpha.txt")
+words = preprocess_data("words_alpha.txt")
 word_set = WordSet(words)
 
-@app.route('/api/play', methods=['POST'])
+
+class Clue:
+  def __init__(self, start_index, direction, length, clue):
+    self.start_index = start_index
+    self.direction = direction
+    self.length = length
+    self.clue = clue
+
+  def to_json(self):
+    return {
+      'start_index': self.start_index,
+      'direction': self.direction,
+      'length': self.length,
+      'clue': self.clue
+    }
+
+class CrosswordGrid:
+  def __init__(self, grid, clues):
+    self.grid = grid
+    self.clues = clues
+
+  def to_json(self):
+    return {
+      'grid': self.grid,
+      'clues': [clue.to_json() for clue in self.clues]
+    }
+
+
+@app.route('/api/play', methods=['GET'])
 def play():
     grid = [
+        ["#", "_", "_", "_", "_"],
         ["_", "_", "_", "_", "_"],
         ["_", "_", "_", "_", "_"],
         ["_", "_", "_", "_", "_"],
-        ["_", "_", "_", "_", "_"],
-        ["_", "_", "_", "_", "_"],
-    ],
-    return jsonify({'solutions': grid.solutions.tolist()})
+        ["_", "_", "_", "_", "#"],
+    ]
+    clues = [
+        Clue([0, 1], "horizontal", 4, "CLUE1"),
+        Clue([1, 0], "horizontal", 5, "CLUE2"),
+        Clue([2, 0], "horizontal", 5, "CLUE3"),
+        Clue([3, 0], "horizontal", 5, "CLUE4"),
+        Clue([4, 0], "horizontal", 4, "CLUE5"),
+
+        Clue([0, 1], "vertical", 5, "CLUE7"),
+        Clue([0, 2], "vertical", 5, "CLUE8"),
+        Clue([0, 3], "vertical", 5, "CLUE9"),
+        Clue([0, 4], "vertical", 4, "CLUE10"),
+        Clue([1, 0], "vertical", 4, "CLUE11"),
+
+    ]
+    grid = CrosswordGrid(grid, clues)
+    return grid.to_json()
 
 
 @app.route('/api/find_grid_solutions', methods=['POST'])
