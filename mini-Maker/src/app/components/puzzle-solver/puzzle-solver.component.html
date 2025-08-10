@@ -1,0 +1,81 @@
+<div class="puzzle-solver">
+  <div class="header">
+    <h1>Crossword Puzzle Solver</h1>
+    <button 
+      class="load-btn" 
+      (click)="loadPuzzle()" 
+      [disabled]="loading()">
+      {{ loading() ? 'Loading...' : 'Load New Puzzle' }}
+    </button>
+  </div>
+
+  @if (error()) {
+    <div class="error-message">
+      {{ error() }}
+    </div>
+  }
+
+  @if (puzzle()) {
+    <div class="puzzle-container">
+      <div class="grid-container">
+        <div class="crossword-grid">
+          @for (row of userSolution(); track $index; let rowIndex = $index) {
+            <div class="grid-row">
+              @for (cell of row; track $index; let colIndex = $index) {
+                <div 
+                  class="grid-cell"
+                  [class.blocked]="cell === '#'"
+                  [class.has-clue]="getClueNumber(rowIndex, colIndex) !== null">
+                  @if (cell === '#') {
+                    <div class="blocked-cell"></div>
+                  } @else {
+                                         <input 
+                       #inputField
+                       type="text" 
+                       maxlength="1"
+                       [value]="cell"
+                       (input)="onCellInput(rowIndex, colIndex, inputField.value)"
+                       class="cell-input">
+                  }
+                  @if (getClueNumber(rowIndex, colIndex) !== null) {
+                    <div class="clue-number">{{ getClueNumber(rowIndex, colIndex) }}</div>
+                  }
+                </div>
+              }
+            </div>
+          }
+        </div>
+      </div>
+
+      <div class="clues-container">
+        <div class="clues-section">
+          <h3>Across</h3>
+          <div class="clues-list">
+            @for (clue of puzzle()!.clues.across | keyvalue; track clue.key) {
+              <div class="clue-item">
+                <span class="clue-number">{{ clue.key }}.</span>
+                <span class="clue-text">{{ clue.value }}</span>
+              </div>
+            }
+          </div>
+        </div>
+
+        <div class="clues-section">
+          <h3>Down</h3>
+          <div class="clues-list">
+            @for (clue of puzzle()!.clues.down | keyvalue; track clue.key) {
+              <div class="clue-item">
+                <span class="clue-number">{{ clue.key }}.</span>
+                <span class="clue-text">{{ clue.value }}</span>
+              </div>
+            }
+          </div>
+        </div>
+      </div>
+    </div>
+  } @else if (!loading()) {
+    <div class="welcome-message">
+      <p>Click "Load New Puzzle" to start solving a crossword puzzle!</p>
+    </div>
+  }
+</div> 

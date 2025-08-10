@@ -94,7 +94,7 @@ class Grid:
                 if not self.is_valid_puzzle(word, word_str):
                     continue
                 for new_word in word_lookup:
-                    if len(self.solutions) > 32:
+                    if len(self.solutions) > 1000:
                         return
                     if self.get_word_direction(word) == "vertical":
                         # For vertical words, reshape to column vector
@@ -126,8 +126,9 @@ class Grid:
                 return
         if not incomplete and self.is_valid_puzzle(word, word_str):
             self.solutions.append(copy.deepcopy(self.grid))
+            print(self.grid)
             print("solution length", len(self.solutions))
-            print(self.solutions)
+            # print(self.solutions)
             return
 
     def is_valid_puzzle(self, word, word_str):
@@ -197,7 +198,7 @@ def compute_all_sets(words):
 
 
 def setup_test_grid(wordstr):
-    words = ["shant", "cedar", "_____", "flees", "fouls"]
+    words = ["___p_", "___e_", "horny", "___i_", "use"]
     # turn into 2d np char array
     grid = np.array([[char for char in word] for word in words])
     return Grid(grid, wordstr)

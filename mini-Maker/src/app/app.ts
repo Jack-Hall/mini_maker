@@ -1,10 +1,10 @@
 import { Component, signal } from '@angular/core';
 import { RouterOutlet } from '@angular/router';
-import { CrosswordComponent } from './components/crossword/crossword.component';
+import { NavigationComponent } from './components/navigation/navigation.component';
 
 @Component({
   selector: 'app-root',
-  imports: [RouterOutlet, CrosswordComponent],
+  imports: [RouterOutlet, NavigationComponent],
   templateUrl: './app.html',
   styleUrl: './app.css'
 })

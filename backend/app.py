@@ -11,6 +11,18 @@ CORS(app)  # Enable CORS for all routes
 words = preprocess_data("backend/words_alpha.txt")
 word_set = WordSet(words)
 
+@app.route('/api/play', methods=['POST'])
+def play():
+    grid = [
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+    ],
+    return jsonify({'solutions': grid.solutions.tolist()})
+
+
 @app.route('/api/find_grid_solutions', methods=['POST'])
 def find_grid_solutions():
     try:

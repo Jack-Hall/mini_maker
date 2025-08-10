@@ -1,0 +1,216 @@
+.puzzle-creator {
+  max-width: 1200px;
+  margin: 0 auto;
+  padding: 20px;
+  font-family: 'Segoe UI', Tahoma, Geneva, Verdana, sans-serif;
+}
+
+.header {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  margin-bottom: 30px;
+  padding-bottom: 20px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.header h1 {
+  margin: 0;
+  color: #333;
+  font-size: 2.5rem;
+  font-weight: 600;
+}
+
+.header-actions {
+  display: flex;
+  gap: 15px;
+}
+
+.clear-btn, .save-btn {
+  padding: 10px 20px;
+  border: none;
+  border-radius: 6px;
+  font-size: 0.95rem;
+  font-weight: 500;
+  cursor: pointer;
+  transition: all 0.3s ease;
+}
+
+.clear-btn {
+  background: #f8f9fa;
+  color: #6c757d;
+  border: 1px solid #dee2e6;
+}
+
+.clear-btn:hover {
+  background: #e9ecef;
+  color: #495057;
+}
+
+.save-btn {
+  background: linear-gradient(135deg, #28a745 0%, #20c997 100%);
+  color: white;
+  box-shadow: 0 4px 15px rgba(40, 167, 69, 0.3);
+}
+
+.save-btn:hover {
+  transform: translateY(-2px);
+  box-shadow: 0 6px 20px rgba(40, 167, 69, 0.4);
+}
+
+.creator-container {
+  display: grid;
+  grid-template-columns: 1fr 300px;
+  gap: 30px;
+  align-items: start;
+}
+
+.grid-editor {
+  background: #fff;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.grid-editor h3 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.4rem;
+  font-weight: 600;
+}
+
+.instruction {
+  color: #666;
+  margin-bottom: 20px;
+  font-size: 0.95rem;
+}
+
+.editor-grid {
+  display: inline-block;
+  border: 2px solid #333;
+  background: #fff;
+}
+
+.editor-row {
+  display: flex;
+}
+
+.editor-cell {
+  position: relative;
+  width: 45px;
+  height: 45px;
+  border: 1px solid #ccc;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  background: #fff;
+  transition: all 0.2s ease;
+}
+
+.editor-cell:hover {
+  background: #f8f9fa;
+}
+
+.editor-cell.selected {
+  background: #e3f2fd;
+  border-color: #2196f3;
+}
+
+.editor-cell .cell-input {
+  width: 100%;
+  height: 100%;
+  border: none;
+  text-align: center;
+  font-size: 1.3rem;
+  font-weight: 600;
+  text-transform: uppercase;
+  background: transparent;
+  outline: none;
+  color: #333;
+  cursor: pointer;
+}
+
+.editor-cell .cell-input:focus {
+  background: #e3f2fd;
+}
+
+.editor-cell .cell-input.selected {
+  background: #e3f2fd;
+}
+
+.creator-sidebar {
+  background: #f8f9fa;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+}
+
+.info-panel h3 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.3rem;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.info-panel p {
+  color: #666;
+  line-height: 1.5;
+  margin-bottom: 15px;
+  font-size: 0.95rem;
+}
+
+.grid-info {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.grid-info h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.grid-info p {
+  margin: 5px 0;
+  color: #555;
+  font-size: 0.9rem;
+}
+
+.grid-info strong {
+  color: #333;
+}
+
+@media (max-width: 768px) {
+  .creator-container {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .header {
+    flex-direction: column;
+    gap: 15px;
+    text-align: center;
+  }
+  
+  .header h1 {
+    font-size: 2rem;
+  }
+  
+  .header-actions {
+    width: 100%;
+    justify-content: center;
+  }
+  
+  .editor-cell {
+    width: 40px;
+    height: 40px;
+  }
+  
+  .editor-cell .cell-input {
+    font-size: 1.1rem;
+  }
+} 

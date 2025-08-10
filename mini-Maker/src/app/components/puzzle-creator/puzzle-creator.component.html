@@ -1,0 +1,52 @@
+<div class="puzzle-creator">
+  <div class="header">
+    <h1>Crossword Puzzle Creator</h1>
+    <div class="header-actions">
+      <button class="clear-btn" (click)="clearGrid()">Clear Grid</button>
+      <button class="save-btn" (click)="savePuzzle()">Save Puzzle</button>
+    </div>
+  </div>
+
+  <div class="creator-container">
+    <div class="grid-editor">
+      <h3>Grid Editor</h3>
+      <p class="instruction">Click on cells to edit them. Type letters or spaces.</p>
+      
+      <div class="editor-grid">
+        @for (row of grid(); track $index; let rowIndex = $index) {
+          <div class="editor-row">
+            @for (cell of row; track $index; let colIndex = $index) {
+              <div 
+                class="editor-cell"
+                [class.selected]="selectedCell()?.row === rowIndex && selectedCell()?.col === colIndex"
+                (click)="onCellClick(rowIndex, colIndex)">
+                                 <input 
+                   #inputField
+                   type="text" 
+                   maxlength="1"
+                   [value]="cell"
+                   (input)="onCellInput(rowIndex, colIndex, inputField.value)"
+                   class="cell-input"
+                   [class.selected]="selectedCell()?.row === rowIndex && selectedCell()?.col === colIndex">
+              </div>
+            }
+          </div>
+        }
+      </div>
+    </div>
+
+    <div class="creator-sidebar">
+      <div class="info-panel">
+        <h3>Puzzle Creator</h3>
+        <p>This feature is currently under development.</p>
+        <p>You can edit the grid above, but saving functionality will be implemented soon.</p>
+        
+        <div class="grid-info">
+          <h4>Grid Information</h4>
+          <p><strong>Size:</strong> {{ grid().length }} × {{ grid()[0]?.length || 0 }}</p>
+          <p><strong>Cells:</strong> {{ grid().length * (grid()[0]?.length || 0) }}</p>
+        </div>
+      </div>
+    </div>
+  </div>
+</div> 
