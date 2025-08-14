@@ -197,6 +197,83 @@ def compute_all_sets(words):
     return top_level_sets
 
 
+def get_words_from_grid(grid):
+    # given a grid of underscores and hashtags. find all words
+    # a word is a row and column of uninterupted underscored. 
+    # a word can contain no hastags or subwords.
+    horizontal_words = get_horizontal_words(grid)
+    vertical_words = get_horizontal_words(grid.T)
+    vertical_words = [((word[0][1], word[0][0]),( word[1][1],word[1][0])) for word in vertical_words]
+    return horizontal_words + vertical_words 
+
+
+def get_horizontal_words(grid):
+    # given a grid of underscores and hashtags. find all horizontal words
+    # a word is a row of uninterupted underscored. 
+    # a word can contain no hastags or subwords.
+    words = []
+    row_index = 0
+    for row in grid:
+        i = 0
+        while i < len(row):
+            char = row[i]
+            while i < len(row) and char == "#":
+                char = row[i]
+                i +=1
+            word_start = i
+            while i < len(row) and char == "_":
+                char = row[i]
+                i += 1
+            #add the word.
+            word_end = i-1
+            if word_end - word_start == 1:
+                row_index += 1
+                continue
+            words.append(((row_index, word_start), (row_index, word_end)))
+        row_index += 1
+    return words
+    
+
+def test_get_words():
+    words = [
+    # rows
+    ((0, 0), (0, 4)),
+    ((1, 0), (1, 4)),
+    ((2, 0), (2, 4)),
+    ((3, 0), (3, 4)),
+    ((4, 0), (4, 4)),
+    # columns
+    #
+    ((0, 0), (4, 0)),
+    ((0, 1), (4, 1)),
+    ((0, 2), (4, 2)),
+    ((0, 3), (4, 3)),
+    ((0, 4), (4, 4)),
+    ]
+    grid = [
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+    ]
+    grid = np.array(grid)
+    print(grid)
+    print(get_words_from_grid(grid))
+    grid = [
+        ["#", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "#"],
+    ]
+    grid = np.array(grid)
+    print(grid)
+    print(get_words_from_grid(grid))
+
+
+
+
 def setup_test_grid(wordstr):
     words = ["___p_", "___e_", "horny", "___i_", "use"]
     # turn into 2d np char array
@@ -205,16 +282,17 @@ def setup_test_grid(wordstr):
 
 
 if __name__ == "__main__":
-    data = "backend/words_alpha.txt"
-    words = preprocess_data(data)
-    # save the words to a txt file.
-    top_level_sets = compute_all_sets(words)
-    word_set = WordSet(words)
-    grid = setup_test_grid(words)
-    # grid = Grid(words=words)
-    grid.find_grid_solutions()
-    print(len(grid.solutions))
-    ipdb.set_trace()
-    with open("short_words.txt", "w") as file:
-        for word in words:
-            file.write(word + "\n")
+    test_get_words()
+    # data = "backend/words_alpha.txt"
+    # words = preprocess_data(data)
+    # # save the words to a txt file.
+    # top_level_sets = compute_all_sets(words)
+    # word_set = WordSet(words)
+    # grid = setup_test_grid(words)
+    # # grid = Grid(words=words)
+    # grid.find_grid_solutions()
+    # print(len(grid.solutions))
+    # ipdb.set_trace()
+    # with open("short_words.txt", "w") as file:
+    #     for word in words:
+    #         file.write(word + "\n")
