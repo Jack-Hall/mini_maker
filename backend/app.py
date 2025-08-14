@@ -65,24 +65,54 @@ def play():
     grid = CrosswordGrid(grid, clues)
     return grid.to_json()
 
-@app.route('/api/get_words', methods=['GET'])
+@app.route('/api/get_words', methods=['POST'])
 def get_words():
     try:
-        data = request.get_json
+        data = request.get_json()
         if 'grid' not in data:
             return jsonify({'error': 'Grid data is required'}), 400
         
         grid_data = data['grid']
+        
+        # Validate grid format
+        if not isinstance(grid_data, list) or len(grid_data) == 0:
+            return jsonify({'error': 'Grid must be a non-empty 2D array'}), 400
+        
+        # Convert grid to numpy array
+        try:
+            grid_array = np.array(grid_data, dtype=str)
+        except Exception as e:
+            return jsonify({'error': f'Invalid grid format: {str(e)}'}), 400
+        
+        # Validate grid content
         valid_chars = set('abcdefghijklmnopqrstuvwxyz_#')
         alphabet = set('abcdefghijklmnopqrstuvwxyz')
+        
+        # Process grid: replace alphabet characters with underscores
+        processed_grid = []
         for row in grid_array:
+            processed_row = []
             for cell in row:
-                if cell.lower() not in valid_chars:
-                    return jsonify({'error': f'Invalid character in grid: {cell}. Only a-z, A-Z, and _ are allowed'}), 400
-                if cell.lower() in set:
+                if cell == "":
                     cell = '_'
-        #replace all alphabet characters with _
-        return jsonify(get_words_from_grid(grid))
+                if cell.lower() not in valid_chars:
+                    return jsonify({'error': f'Invalid character in grid: {cell}. Only a-z, A-Z, _, and # are allowed'}), 400
+                if cell.lower() in alphabet:
+                    processed_row.append('_')
+                else :
+                    processed_row.append(cell)
+            processed_grid.append(processed_row)
+        
+        # Get words from the processed grid
+        words = get_words_from_grid(np.array(processed_grid))
+        
+        return jsonify({
+            'words': words,
+            'word_count': len(words)
+        })
+        
+    except Exception as e:
+        return jsonify({'error': f'Server error: {str(e)}'}), 500
 
 
 @app.route('/api/find_grid_solutions', methods=['POST'])

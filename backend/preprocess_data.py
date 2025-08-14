@@ -270,6 +270,16 @@ def test_get_words():
     grid = np.array(grid)
     print(grid)
     print(get_words_from_grid(grid))
+    grid = [
+        ["#", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "#", "#"],
+    ]
+    grid = np.array(grid)
+    print(grid)
+    print(get_words_from_grid(grid))
 
 
 

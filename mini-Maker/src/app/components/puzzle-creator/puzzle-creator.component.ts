@@ -1,6 +1,7 @@
-import { Component, signal, computed } from '@angular/core';
+import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
+import { CrosswordService, GetWordsResponse } from '../../services/crossword.service';
 
 interface Clue {
   start_index: [number, number];
@@ -17,9 +18,17 @@ interface Clue {
   styleUrl: './puzzle-creator.component.css'
 })
 export class PuzzleCreatorComponent {
+  private readonly crosswordService = inject(CrosswordService);
+  
   protected readonly grid = signal<string[][]>(
     Array(5).fill(null).map(() => Array(5).fill(''))
   );
+  protected readonly detectedWords = signal<[number, number][][]>([]);
+
+  constructor() {
+    // Initial word detection when component loads
+    setTimeout(() => this.updateWordsFromGrid(), 100);
+  }
 
   protected readonly isEditing = signal(false);
   protected readonly selectedCell = signal<{row: number, col: number} | null>(null);
@@ -64,6 +73,9 @@ export class PuzzleCreatorComponent {
     const currentValue = currentGrid[row][col];
     currentGrid[row][col] = currentValue === '#' ? '' : '#';
     this.grid.set([...currentGrid]);
+    
+    // Update words when black cells change
+    this.updateWordsFromGrid();
   }
 
   protected onCellFocus(row: number, col: number): void {
@@ -113,6 +125,7 @@ export class PuzzleCreatorComponent {
         event.preventDefault();
         currentGrid[row][col] = currentValue === '#' ? '' : '#';
         this.grid.set([...currentGrid]);
+        this.updateWordsFromGrid();
         return;
       }
       
@@ -524,5 +537,83 @@ export class PuzzleCreatorComponent {
         this.focusFirstCellOfNextClue(next);
       }
     }
+  }
+
+  private updateWordsFromGrid(): void {
+    const grid = this.grid();
+    this.crosswordService.getWordsFromGrid(grid).subscribe({
+      next: (response: GetWordsResponse) => {
+        this.detectedWords.set(response.words);
+        this.autoGenerateClues(response.words);
+      },
+      error: (err) => {
+        console.error('Error getting words from grid:', err);
+      }
+    });
+  }
+
+  private autoGenerateClues(words: [number, number][][]): void {
+    const newClues: Clue[] = [];
+    
+    words.forEach(word => {
+      const [[startRow, startCol], [endRow, endCol]] = word;
+      
+      // Determine direction and length
+      const isHorizontal = startRow === endRow;
+      const direction = isHorizontal ? 'horizontal' : 'vertical';
+      const length = isHorizontal ? (endCol - startCol + 1) : (endRow - startRow + 1);
+      
+      // Only create clues for words with 2+ letters
+      if (length >= 2) {
+        // Check if clue already exists for this position and direction
+        const existingClue = this.clues().find(c => 
+          c.direction === direction &&
+          c.start_index[0] === startRow &&
+          c.start_index[1] === startCol
+        );
+        
+        if (!existingClue) {
+          newClues.push({
+            start_index: [startRow, startCol],
+            direction,
+            length,
+            clue: `Enter clue for ${length}-letter ${direction} word`
+          });
+        }
+      }
+    });
+    
+    // Add new clues to existing ones
+    if (newClues.length > 0) {
+      this.clues.set([...this.clues(), ...newClues]);
+    }
+    
+    // Remove clues that no longer have corresponding words
+    this.removeOrphanedClues(words);
+  }
+
+  private removeOrphanedClues(words: [number, number][][]): void {
+    const currentClues = this.clues();
+    const validClues = currentClues.filter(clue => {
+      return words.some(word => {
+        const [[startRow, startCol], [endRow, endCol]] = word;
+        const isHorizontal = startRow === endRow;
+        const direction = isHorizontal ? 'horizontal' : 'vertical';
+        
+        return (
+          clue.direction === direction &&
+          clue.start_index[0] === startRow &&
+          clue.start_index[1] === startCol
+        );
+      });
+    });
+    
+    if (validClues.length !== currentClues.length) {
+      this.clues.set(validClues);
+    }
+  }
+
+  protected getDetectedWordCount(): number {
+    return this.detectedWords().length;
   }
 } 

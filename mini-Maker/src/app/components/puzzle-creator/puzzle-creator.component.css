@@ -59,10 +59,19 @@
 }
 
 .creator-container {
+  display: flex;
+  flex-direction: column;
+  gap: 30px;
+  align-items: center;
+}
+
+.top-section {
   display: grid;
   grid-template-columns: 1fr 300px;
   gap: 30px;
   align-items: start;
+  width: 100%;
+  max-width: 1200px;
 }
 
 .grid-editor {
@@ -242,6 +251,14 @@
   font-weight: 600;
 }
 
+.clue-info {
+  margin: 0 0 10px 0;
+  color: #666;
+  font-size: 0.9rem;
+  font-style: italic;
+  line-height: 1.4;
+}
+
 .add-clue-btn {
   background: linear-gradient(135deg, #4caf50 0%, #45a049 100%);
   color: white;
@@ -404,8 +421,59 @@
   color: #555;
 }
 
+.clues-panel {
+  width: 100%;
+  max-width: 800px;
+  background: #f8f9fa;
+  padding: 25px;
+  border-radius: 12px;
+  box-shadow: 0 4px 20px rgba(0, 0, 0, 0.08);
+  margin-top: 20px;
+}
+
+.clues-panel h3 {
+  margin: 0 0 20px 0;
+  color: #333;
+  font-size: 1.5rem;
+  font-weight: 600;
+  text-align: center;
+  padding-bottom: 10px;
+  border-bottom: 2px solid #e0e0e0;
+}
+
+.clues-container-below {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 30px;
+  margin-bottom: 20px;
+}
+
+.clues-panel .clues-section {
+  margin-bottom: 0;
+}
+
+.clues-panel .clues-section h4 {
+  margin: 0 0 15px 0;
+  color: #333;
+  font-size: 1.2rem;
+  font-weight: 600;
+  padding-bottom: 8px;
+  border-bottom: 1px solid #ddd;
+}
+
+.clues-panel .selected-clue {
+  margin-top: 0;
+  text-align: center;
+  background: #e8f4fd;
+  border: 1px solid #2196f3;
+}
+
 @media (max-width: 768px) {
   .creator-container {
+    gap: 20px;
+  }
+  
+  .top-section {
     grid-template-columns: 1fr;
     gap: 20px;
   }
@@ -434,7 +502,13 @@
     font-size: 1.1rem;
   }
   
-  .creator-sidebar {
-    order: -1;
+  .clues-container-below {
+    grid-template-columns: 1fr;
+    gap: 20px;
+  }
+  
+  .clues-panel {
+    padding: 20px;
+    margin-top: 15px;
   }
 } 

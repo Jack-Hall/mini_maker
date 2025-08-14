@@ -8,7 +8,8 @@
   </div>
 
   <div class="creator-container">
-    <div class="grid-editor">
+    <div class="top-section">
+      <div class="grid-editor">
       <h3>Grid Editor</h3>
       <p class="instruction">Click cells to edit. Right-click or Ctrl+Delete to toggle black cells. Enter to toggle direction.</p>
       
@@ -40,49 +41,55 @@
           </div>
         }
       </div>
+      
+      <div class="creator-sidebar">
+        <div class="info-panel">
+          <h3>Puzzle Creator</h3>
+          <p>This feature is currently under development.</p>
+          <p>You can edit the grid above, but saving functionality will be implemented soon.</p>
+          
+          <div class="grid-info">
+            <h4>Grid Information</h4>
+            <p><strong>Size:</strong> {{ grid().length }} × {{ grid()[0].length }}</p>
+            <p><strong>Total Cells:</strong> {{ grid().length * grid()[0].length }}</p>
+            <p><strong>Black Cells:</strong> {{ (grid() | json).split('"#"').length - 1 }}</p>
+            <p><strong>Detected Words:</strong> {{ getDetectedWordCount() }}</p>
+            <p><strong>Direction:</strong> {{ activeDirection() === 'horizontal' ? 'Across' : 'Down' }}</p>
+          </div>
+          
+          <div class="controls-info">
+            <h4>Controls</h4>
+            <ul>
+              <li><strong>Right-click:</strong> Toggle black cell</li>
+              <li><strong>Ctrl+Delete:</strong> Toggle black cell</li>
+              <li><strong>Enter:</strong> Switch direction</li>
+              <li><strong>Arrow keys:</strong> Navigate grid</li>
+            </ul>
+          </div>
+
+          <div class="clue-actions">
+            <h4>Clue Management</h4>
+            <p class="clue-info">Clues are automatically generated when you add/remove black cells. Click to manually add more.</p>
+            <button 
+              class="add-clue-btn" 
+              (click)="addClue()"
+              [disabled]="!activeCell()">
+              Add Clue for Current Word
+            </button>
+          </div>
+        </div>
+      </div>
     </div>
-
-    <div class="creator-sidebar">
-      <div class="info-panel">
-        <h3>Puzzle Creator</h3>
-        <p>This feature is currently under development.</p>
-        <p>You can edit the grid above, but saving functionality will be implemented soon.</p>
-        
-        <div class="grid-info">
-          <h4>Grid Information</h4>
-          <p><strong>Size:</strong> {{ grid().length }} × {{ grid()[0].length }}</p>
-          <p><strong>Total Cells:</strong> {{ grid().length * grid()[0].length }}</p>
-          <p><strong>Black Cells:</strong> {{ (grid() | json).split('"#"').length - 1 }}</p>
-          <p><strong>Direction:</strong> {{ activeDirection() === 'horizontal' ? 'Across' : 'Down' }}</p>
-        </div>
-        
-        <div class="controls-info">
-          <h4>Controls</h4>
-          <ul>
-            <li><strong>Right-click:</strong> Toggle black cell</li>
-            <li><strong>Ctrl+Delete:</strong> Toggle black cell</li>
-            <li><strong>Enter:</strong> Switch direction</li>
-            <li><strong>Arrow keys:</strong> Navigate grid</li>
-          </ul>
-        </div>
-
-        <div class="clue-actions">
-          <h4>Clue Management</h4>
-          <button 
-            class="add-clue-btn" 
-            (click)="addClue()"
-            [disabled]="!activeCell()">
-            Add Clue for Current Word
-          </button>
-        </div>
-
-        @if (acrossClues().length > 0 || downClues().length > 0) {
-          <div class="clues-preview">
-            <h4>Clues</h4>
-            
+      
+      <!-- Clue editing panel below the puzzle -->
+      @if (acrossClues().length > 0 || downClues().length > 0) {
+        <div class="clues-panel">
+          <h3>Clues</h3>
+          
+          <div class="clues-container-below">
             @if (acrossClues().length > 0) {
               <div class="clues-section">
-                <h5>Across</h5>
+                <h4>Across</h4>
                 <div class="clues-list">
                   @for (clue of acrossClues(); track $index) {
                     <div class="clue-item" [class.active-clue]="isClueActive(clue)" [class.editing]="isEditingClue(clue)">
@@ -114,7 +121,7 @@
 
             @if (downClues().length > 0) {
               <div class="clues-section">
-                <h5>Down</h5>
+                <h4>Down</h4>
                 <div class="clues-list">
                   @for (clue of downClues(); track $index) {
                     <div class="clue-item" [class.active-clue]="isClueActive(clue)" [class.editing]="isEditingClue(clue)">
@@ -143,17 +150,16 @@
                 </div>
               </div>
             }
-
-            @if (activeClue()) {
-              <div class="selected-clue">
-                <strong>Active:</strong>
-                <span class="selected-clue-direction">{{ activeClue()!.direction === 'horizontal' ? 'Across' : 'Down' }}</span>
-                <span class="selected-clue-text">{{ activeClue()!.clue }}</span>
-              </div>
-            }
           </div>
-        }
-      </div>
-    </div>
+
+          @if (activeClue()) {
+            <div class="selected-clue">
+              <strong>Active:</strong>
+              <span class="selected-clue-direction">{{ activeClue()!.direction === 'horizontal' ? 'Across' : 'Down' }}</span>
+              <span class="selected-clue-text">{{ activeClue()!.clue }}</span>
+            </div>
+          }
+        </div>
+      }
   </div>
 </div> 

@@ -27,12 +27,22 @@ export interface GridSolutionResponse {
   solution_count: number;
 }
 
+export interface WordPosition {
+  start: [number, number];
+  end: [number, number];
+}
+
+export interface GetWordsResponse {
+  words: [number, number][][]; // Array of [[start_row, start_col], [end_row, end_col]]
+  word_count: number;
+}
+
 @Injectable({
   providedIn: 'root'
 })
 export class CrosswordService {
   private readonly http = inject(HttpClient);
-  private readonly apiUrl = 'http://localhost:5000/api';
+  private readonly apiUrl = '/api';
 
   getCrossword(): Observable<CrosswordData> {
     // Replace with your actual backend endpoint
@@ -42,6 +52,11 @@ export class CrosswordService {
   findGridSolutions(grid: string[][]): Observable<GridSolutionResponse> {
     const request: GridSolutionRequest = { grid };
     return this.http.post<GridSolutionResponse>(`${this.apiUrl}/find_grid_solutions`, request);
+  }
+
+  getWordsFromGrid(grid: string[][]): Observable<GetWordsResponse> {
+    const request = { grid };
+    return this.http.post<GetWordsResponse>(`${this.apiUrl}/get_words`, request);
   }
 
   parseGrid(grid: string[][]): CrosswordCell[][] {
