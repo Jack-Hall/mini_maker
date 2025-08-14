@@ -26,11 +26,31 @@ export class PuzzleSolverComponent {
   private readonly http = inject(HttpClient);
   
   protected readonly puzzle = signal<CrosswordGrid | null>(null);
-  protected readonly across_clues = computed<Clue[]>(()  => this.get_across_clues(this.puzzle()))
-  protected readonly down_clues = computed<Clue[]>(()  => this.get_across_clues(this.puzzle()))
+  protected readonly across_clues = computed<Clue[]>(() => this.get_across_clues(this.puzzle()));
+  protected readonly down_clues = computed<Clue[]>(() => this.get_down_clues(this.puzzle()));
   protected readonly loading = signal(false);
   protected readonly error = signal<string | null>(null);
   protected readonly userSolution = signal<string[][]>([]);
+  protected readonly activeDirection = signal<'horizontal' | 'vertical'>('horizontal');
+  protected readonly activeCell = signal<{ row: number; col: number } | null>(null);
+  protected readonly activeClue = computed<Clue | null>(() => {
+    const p = this.puzzle();
+    const active = this.activeCell();
+    const dir = this.activeDirection();
+    if (!p || !active) return null;
+    const row = active.row;
+    const col = active.col;
+    const matched = p.clues.find((clue) => {
+      if (clue.direction !== dir) return false;
+      const [sr, sc] = clue.start_index;
+      if (dir === 'horizontal') {
+        return sr === row && col >= sc && col < sc + clue.length;
+      } else {
+        return sc === col && row >= sr && row < sr + clue.length;
+      }
+    });
+    return matched ?? null;
+  });
 
 
   get_across_clues(grid: CrosswordGrid | null){
@@ -82,6 +102,222 @@ export class PuzzleSolverComponent {
     if (currentSolution[row] && currentSolution[row][col] !== '#') {
       currentSolution[row][col] = value.toUpperCase();
       this.userSolution.set([...currentSolution]);
+
+      if (value && this.shouldAdvanceToNextCell(row, col)) {
+        this.focusNextCell(row, col);
+      }
+    }
+  }
+
+  protected onCellFocus(row: number, col: number): void {
+    this.activeCell.set({ row, col });
+  }
+
+  protected onCellKeydown(row: number, col: number, event: KeyboardEvent): void {
+    const key = event.key;
+    if (key === 'Enter') {
+      event.preventDefault();
+      this.toggleDirection();
+      return;
+    }
+
+    if (key === 'Backspace') {
+      const solution = this.userSolution();
+      const value = solution[row]?.[col] ?? '';
+      if (!value) {
+        event.preventDefault();
+        this.focusPreviousCell(row, col);
+        return;
+      }
+    }
+
+    if (key === 'ArrowUp' || key === 'ArrowDown' || key === 'ArrowLeft' || key === 'ArrowRight') {
+      event.preventDefault();
+      this.navigateToCell(row, col, key);
+    }
+  }
+
+  protected isActiveCell(row: number, col: number): boolean {
+    const active = this.activeCell();
+    return !!active && active.row === row && active.col === col;
+  }
+
+  protected isCellInActiveWord(row: number, col: number): boolean {
+    const active = this.activeCell();
+    const grid = this.userSolution();
+    if (!active || grid.length === 0) return false;
+
+    if (this.activeDirection() === 'horizontal') {
+      let startCol = active.col;
+      while (startCol - 1 >= 0 && grid[active.row][startCol - 1] !== '#') startCol--;
+      let endCol = active.col;
+      while (endCol + 1 < grid[active.row].length && grid[active.row][endCol + 1] !== '#') endCol++;
+      return row === active.row && col >= startCol && col <= endCol && grid[row][col] !== '#';
+    } else {
+      let startRow = active.row;
+      while (startRow - 1 >= 0 && grid[startRow - 1][active.col] !== '#') startRow--;
+      let endRow = active.row;
+      while (endRow + 1 < grid.length && grid[endRow + 1][active.col] !== '#') endRow++;
+      return col === active.col && row >= startRow && row <= endRow && grid[row][col] !== '#';
+    }
+  }
+
+  protected toggleDirection(): void {
+    const current = this.activeDirection();
+    this.activeDirection.set(current === 'horizontal' ? 'vertical' : 'horizontal');
+  }
+
+  protected isClueActive(clue: Clue): boolean {
+    const ac = this.activeClue();
+    if (!ac) return false;
+    return (
+      ac.direction === clue.direction &&
+      ac.length === clue.length &&
+      ac.start_index[0] === clue.start_index[0] &&
+      ac.start_index[1] === clue.start_index[1]
+    );
+  }
+
+  private isEditable(row: number, col: number): boolean {
+    const grid = this.userSolution();
+    return grid[row]?.[col] !== '#';
+  }
+
+  private shouldAdvanceToNextCell(row: number, col: number): boolean {
+    const direction = this.activeDirection();
+    const grid = this.userSolution();
+    if (direction === 'horizontal') {
+      let c = col + 1;
+      while (c < grid[row].length) {
+        if (grid[row][c] !== '#') return true;
+        if (grid[row][c] === '#') return false;
+        c++;
+      }
+      return false;
+    } else {
+      let r = row + 1;
+      while (r < grid.length) {
+        if (grid[r][col] !== '#') return true;
+        if (grid[r][col] === '#') return false;
+        r++;
+      }
+      return false;
+    }
+  }
+
+  private focusNextCell(row: number, col: number): void {
+    const grid = this.userSolution();
+    const direction = this.activeDirection();
+    let targetRow = row;
+    let targetCol = col;
+
+    if (direction === 'horizontal') {
+      targetCol++;
+      while (targetCol < grid[targetRow].length) {
+        if (this.isEditable(targetRow, targetCol)) break;
+        if (grid[targetRow][targetCol] === '#') return;
+        targetCol++;
+      }
+    } else {
+      targetRow++;
+      while (targetRow < grid.length) {
+        if (this.isEditable(targetRow, targetCol)) break;
+        if (grid[targetRow][targetCol] === '#') return;
+        targetRow++;
+      }
+    }
+
+    if (
+      targetRow >= 0 &&
+      targetRow < grid.length &&
+      targetCol >= 0 &&
+      targetCol < grid[0].length &&
+      this.isEditable(targetRow, targetCol)
+    ) {
+      setTimeout(() => {
+        const nextInput = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`) as HTMLInputElement | null;
+        if (nextInput) nextInput.focus();
+        this.activeCell.set({ row: targetRow, col: targetCol });
+      }, 10);
+    }
+  }
+
+  private focusPreviousCell(row: number, col: number): void {
+    const grid = this.userSolution();
+    const direction = this.activeDirection();
+    let targetRow = row;
+    let targetCol = col;
+
+    if (direction === 'horizontal') {
+      targetCol--;
+      while (targetCol >= 0) {
+        if (this.isEditable(targetRow, targetCol)) break;
+        if (grid[targetRow][targetCol] === '#') return;
+        targetCol--;
+      }
+    } else {
+      targetRow--;
+      while (targetRow >= 0) {
+        if (this.isEditable(targetRow, targetCol)) break;
+        if (grid[targetRow][targetCol] === '#') return;
+        targetRow--;
+      }
+    }
+
+    if (
+      targetRow >= 0 &&
+      targetRow < grid.length &&
+      targetCol >= 0 &&
+      targetCol < grid[0].length &&
+      this.isEditable(targetRow, targetCol)
+    ) {
+      const prevInput = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`) as HTMLInputElement | null;
+      if (prevInput) prevInput.focus();
+      this.activeCell.set({ row: targetRow, col: targetCol });
+    }
+  }
+
+  private navigateToCell(row: number, col: number, directionKey: string): void {
+    const grid = this.userSolution();
+    let targetRow = row;
+    let targetCol = col;
+
+    switch (directionKey) {
+      case 'ArrowUp':
+        targetRow = Math.max(0, targetRow - 1);
+        break;
+      case 'ArrowDown':
+        targetRow = Math.min(grid.length - 1, targetRow + 1);
+        break;
+      case 'ArrowLeft':
+        targetCol = Math.max(0, targetCol - 1);
+        break;
+      case 'ArrowRight':
+        targetCol = Math.min(grid[0].length - 1, targetCol + 1);
+        break;
+    }
+
+    while (
+      targetRow >= 0 &&
+      targetRow < grid.length &&
+      targetCol >= 0 &&
+      targetCol < grid[0].length
+    ) {
+      if (this.isEditable(targetRow, targetCol)) {
+        const targetInput = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`) as HTMLInputElement | null;
+        if (targetInput) targetInput.focus();
+        this.activeCell.set({ row: targetRow, col: targetCol });
+        break;
+      }
+
+      if (directionKey === 'ArrowUp') targetRow--;
+      else if (directionKey === 'ArrowDown') targetRow++;
+      else if (directionKey === 'ArrowLeft') targetCol--;
+      else if (directionKey === 'ArrowRight') targetCol++;
+
+      if (targetRow < 0 || targetRow >= grid.length || targetCol < 0 || targetCol >= grid[0].length) {
+        break;
+      }
     }
   }
 

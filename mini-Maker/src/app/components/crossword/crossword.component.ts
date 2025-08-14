@@ -18,6 +18,8 @@ export class CrosswordComponent implements OnInit {
   protected readonly error = signal<string | null>(null);
   protected readonly solutions = signal<string[][][]>([]);
   protected readonly isFindingSolutions = signal(false);
+  protected readonly activeDirection = signal<'across' | 'down'>('across');
+  protected readonly activeCell = signal<{ row: number; col: number } | null>(null);
 
   ngOnInit(): void {
     this.loadCrossword();
@@ -52,7 +54,7 @@ export class CrosswordComponent implements OnInit {
     if (value.length <= 1 && /^[A-Z]?$/.test(value)) {
       cell.value = value;
       
-      // Auto-advance to next cell
+      // Auto-advance to next cell in the current direction
       if (value && this.shouldAdvanceToNextCell(cell)) {
         this.focusNextCell(cell);
       }
@@ -60,6 +62,12 @@ export class CrosswordComponent implements OnInit {
   }
 
   protected onCellKeydown(cell: CrosswordCell, event: KeyboardEvent): void {
+    if (event.key === 'Enter') {
+      event.preventDefault();
+      this.toggleDirection();
+      return;
+    }
+
     if (event.key === 'Backspace' && !cell.value) {
       event.preventDefault();
       this.focusPreviousCell(cell);
@@ -70,31 +78,101 @@ export class CrosswordComponent implements OnInit {
     }
   }
 
+  protected onCellFocus(cell: CrosswordCell): void {
+    this.activeCell.set({ row: cell.row, col: cell.col });
+  }
+
   private shouldAdvanceToNextCell(cell: CrosswordCell): boolean {
     const grid = this.crosswordGrid();
-    const nextCol = cell.col + 1;
-    return nextCol < grid[cell.row].length && grid[cell.row][nextCol].isEditable;
+    const direction = this.activeDirection();
+    if (direction === 'across') {
+      let c = cell.col + 1;
+      while (c < grid[cell.row].length) {
+        if (grid[cell.row][c].isEditable) return true;
+        if (grid[cell.row][c].isBlack) return false;
+        c++;
+      }
+      return false;
+    } else {
+      let r = cell.row + 1;
+      while (r < grid.length) {
+        if (grid[r][cell.col].isEditable) return true;
+        if (grid[r][cell.col].isBlack) return false;
+        r++;
+      }
+      return false;
+    }
   }
 
   private focusNextCell(currentCell: CrosswordCell): void {
     const grid = this.crosswordGrid();
-    const nextCol = currentCell.col + 1;
-    
-    if (nextCol < grid[currentCell.row].length && grid[currentCell.row][nextCol].isEditable) {
+    const direction = this.activeDirection();
+    let targetRow = currentCell.row;
+    let targetCol = currentCell.col;
+
+    if (direction === 'across') {
+      targetCol++;
+      while (targetCol < grid[targetRow].length) {
+        if (grid[targetRow][targetCol].isEditable) break;
+        if (grid[targetRow][targetCol].isBlack) return;
+        targetCol++;
+      }
+    } else {
+      targetRow++;
+      while (targetRow < grid.length) {
+        if (grid[targetRow][targetCol].isEditable) break;
+        if (grid[targetRow][targetCol].isBlack) return;
+        targetRow++;
+      }
+    }
+
+    if (
+      targetRow >= 0 &&
+      targetRow < grid.length &&
+      targetCol >= 0 &&
+      targetCol < grid[0].length &&
+      grid[targetRow][targetCol].isEditable
+    ) {
       setTimeout(() => {
-        const nextInput = document.querySelector(`[data-row="${currentCell.row}"][data-col="${nextCol}"]`) as HTMLInputElement;
+        const nextInput = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`) as HTMLInputElement;
         if (nextInput) nextInput.focus();
+        this.activeCell.set({ row: targetRow, col: targetCol });
       }, 10);
     }
   }
 
   private focusPreviousCell(currentCell: CrosswordCell): void {
     const grid = this.crosswordGrid();
-    const prevCol = currentCell.col - 1;
-    
-    if (prevCol >= 0 && grid[currentCell.row][prevCol].isEditable) {
-      const prevInput = document.querySelector(`[data-row="${currentCell.row}"][data-col="${prevCol}"]`) as HTMLInputElement;
+    const direction = this.activeDirection();
+    let targetRow = currentCell.row;
+    let targetCol = currentCell.col;
+
+    if (direction === 'across') {
+      targetCol--;
+      while (targetCol >= 0) {
+        if (grid[targetRow][targetCol].isEditable) break;
+        if (grid[targetRow][targetCol].isBlack) return;
+        targetCol--;
+      }
+    } else {
+      targetRow--;
+      while (targetRow >= 0) {
+        if (grid[targetRow][targetCol].isEditable) break;
+        if (grid[targetRow][targetCol].isBlack) return;
+        targetRow--;
+      }
+    }
+
+    if (
+      targetRow >= 0 &&
+      targetRow < grid.length &&
+      targetCol >= 0 &&
+      targetCol < grid[0].length &&
+      grid[targetRow][targetCol].isEditable
+    ) {
+      const prevInput = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`) as HTMLInputElement;
       if (prevInput) prevInput.focus();
+      this.activeCell.set({ row: targetRow, col: targetCol });
     }
   }
 
@@ -123,6 +201,7 @@ export class CrosswordComponent implements OnInit {
       if (grid[targetRow][targetCol].isEditable) {
         const targetInput = document.querySelector(`[data-row="${targetRow}"][data-col="${targetCol}"]`) as HTMLInputElement;
         if (targetInput) targetInput.focus();
+        this.activeCell.set({ row: targetRow, col: targetCol });
         break;
       }
       
@@ -141,8 +220,55 @@ export class CrosswordComponent implements OnInit {
 
   protected getCellClass(cell: CrosswordCell): string {
     if (cell.isBlack) return 'black-cell';
-    if (cell.isEditable) return 'editable-cell';
+    if (cell.isEditable) {
+      const classes: string[] = ['editable-cell'];
+      if (this.isCellInActiveWord(cell)) classes.push('highlighted-cell');
+      if (this.isActiveCell(cell)) classes.push('active-cell');
+      return classes.join(' ');
+    }
     return 'filled-cell';
+  }
+
+  protected isActiveCell(cell: CrosswordCell): boolean {
+    const active = this.activeCell();
+    return !!active && active.row === cell.row && active.col === cell.col;
+  }
+
+  protected isCellInActiveWord(cell: CrosswordCell): boolean {
+    const active = this.activeCell();
+    if (!active) return false;
+
+    const grid = this.crosswordGrid();
+    const direction = this.activeDirection();
+
+    if (direction === 'across') {
+      // find word boundaries horizontally at active.row
+      let startCol = active.col;
+      while (startCol - 1 >= 0 && !grid[active.row][startCol - 1].isBlack) {
+        startCol--;
+      }
+      let endCol = active.col;
+      while (endCol + 1 < grid[active.row].length && !grid[active.row][endCol + 1].isBlack) {
+        endCol++;
+      }
+      return cell.row === active.row && cell.col >= startCol && cell.col <= endCol && !grid[cell.row][cell.col].isBlack;
+    } else {
+      // down
+      let startRow = active.row;
+      while (startRow - 1 >= 0 && !grid[startRow - 1][active.col].isBlack) {
+        startRow--;
+      }
+      let endRow = active.row;
+      while (endRow + 1 < grid.length && !grid[endRow + 1][active.col].isBlack) {
+        endRow++;
+      }
+      return cell.col === active.col && cell.row >= startRow && cell.row <= endRow && !grid[cell.row][cell.col].isBlack;
+    }
+  }
+
+  protected toggleDirection(): void {
+    const current = this.activeDirection();
+    this.activeDirection.set(current === 'across' ? 'down' : 'across');
   }
 
   protected clearPuzzle(): void {

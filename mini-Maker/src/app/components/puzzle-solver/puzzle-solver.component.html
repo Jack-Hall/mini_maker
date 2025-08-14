@@ -25,7 +25,9 @@
                 <div 
                   class="grid-cell"
                   [class.blocked]="cell === '#'"
-                  [class.has-clue]="getClueNumber(rowIndex, colIndex) !== null">
+                  [class.has-clue]="getClueNumber(rowIndex, colIndex) !== null"
+                  [class.highlighted]="isCellInActiveWord(rowIndex, colIndex)"
+                  [class.active]="isActiveCell(rowIndex, colIndex)">
                   @if (cell === '#') {
                     <div class="blocked-cell"></div>
                   } @else {
@@ -35,6 +37,10 @@
                        maxlength="1"
                        [value]="cell"
                        (input)="onCellInput(rowIndex, colIndex, inputField.value)"
+                       (focus)="onCellFocus(rowIndex, colIndex)"
+                       (keydown)="onCellKeydown(rowIndex, colIndex, $event)"
+                       [attr.data-row]="rowIndex"
+                       [attr.data-col]="colIndex"
                        class="cell-input">
                   }
                   @if (getClueNumber(rowIndex, colIndex) !== null) {
@@ -52,7 +58,7 @@
           <h3>Across</h3>
           <div class="clues-list">
             @for (clue of across_clues(); track $index) {
-              <div class="clue-item">
+              <div class="clue-item" [class.active-clue]="isClueActive(clue)">
                 <span class="clue-number">{{ $index + 1 }}.</span>
                 <span class="clue-text">{{ clue.clue }}</span>
               </div>
@@ -64,13 +70,19 @@
           <h3>Down</h3>
           <div class="clues-list">
             @for (clue of down_clues(); track $index) {
-              <div class="clue-item">
+              <div class="clue-item" [class.active-clue]="isClueActive(clue)">
                 <span class="clue-number">{{ $index + 1 }}.</span>
                 <span class="clue-text">{{ clue.clue }}</span>
               </div>
             }
           </div>
         </div>
+      </div>
+
+      <div class="selected-clue" *ngIf="activeClue() as c">
+        <strong>Selected:</strong>
+        <span class="selected-clue-direction">{{ c.direction === 'horizontal' ? 'Across' : 'Down' }}</span>
+        <span class="selected-clue-text">{{ c.clue }}</span>
       </div>
     </div>
   } @else if (!loading()) {
