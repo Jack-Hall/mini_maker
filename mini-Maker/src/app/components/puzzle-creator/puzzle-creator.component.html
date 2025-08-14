@@ -53,7 +53,13 @@
             <p><strong>Size:</strong> {{ grid().length }} × {{ grid()[0].length }}</p>
             <p><strong>Total Cells:</strong> {{ grid().length * grid()[0].length }}</p>
             <p><strong>Black Cells:</strong> {{ (grid() | json).split('"#"').length - 1 }}</p>
-            <p><strong>Detected Words:</strong> {{ getDetectedWordCount() }}</p>
+            <p><strong>Detected Words:</strong> 
+            @if (isUpdatingWords()) {
+              <span class="updating">Updating...</span>
+            } @else {
+              {{ getDetectedWordCount() }}
+            }
+          </p>
             <p><strong>Direction:</strong> {{ activeDirection() === 'horizontal' ? 'Across' : 'Down' }}</p>
           </div>
           

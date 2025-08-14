@@ -36,6 +36,7 @@ export class PuzzleCreatorComponent {
   protected readonly activeCell = signal<{ row: number; col: number } | null>(null);
   protected readonly clues = signal<Clue[]>([]);
   protected readonly editingClue = signal<Clue | null>(null);
+  protected readonly isUpdatingWords = signal(false);
   
   protected readonly acrossClues = computed<Clue[]>(() => 
     this.clues().filter(clue => clue.direction === 'horizontal')
@@ -74,7 +75,8 @@ export class PuzzleCreatorComponent {
     currentGrid[row][col] = currentValue === '#' ? '' : '#';
     this.grid.set([...currentGrid]);
     
-    // Update words when black cells change
+    // Immediately refresh words and clues locally, then update via API
+    this.immediateWordRefresh();
     this.updateWordsFromGrid();
   }
 
@@ -125,6 +127,7 @@ export class PuzzleCreatorComponent {
         event.preventDefault();
         currentGrid[row][col] = currentValue === '#' ? '' : '#';
         this.grid.set([...currentGrid]);
+        this.immediateWordRefresh();
         this.updateWordsFromGrid();
         return;
       }
@@ -539,22 +542,88 @@ export class PuzzleCreatorComponent {
     }
   }
 
+  private immediateWordRefresh(): void {
+    // Immediate local word detection for instant UI updates
+    this.fallbackWordDetection();
+  }
+
   private updateWordsFromGrid(): void {
     const grid = this.grid();
+    this.isUpdatingWords.set(true);
+    
     this.crosswordService.getWordsFromGrid(grid).subscribe({
       next: (response: GetWordsResponse) => {
         this.detectedWords.set(response.words);
         this.autoGenerateClues(response.words);
+        this.isUpdatingWords.set(false);
+        console.log(`API word detection completed: Found ${response.words.length} words`);
       },
       error: (err) => {
         console.error('Error getting words from grid:', err);
+        this.isUpdatingWords.set(false);
+        // API failed, but we already have local detection from immediateWordRefresh
+        console.log('Using local word detection due to API error');
       }
     });
   }
 
-  private autoGenerateClues(words: [number, number][][]): void {
-    const newClues: Clue[] = [];
+  private fallbackWordDetection(): void {
+    // Local word detection - treats empty cells as potential word spaces
+    const grid = this.grid();
+    const words: [number, number][][] = [];
     
+    console.log('Running local word detection on grid:', grid);
+    
+    // Detect horizontal words
+    for (let row = 0; row < grid.length; row++) {
+      let start = -1;
+      for (let col = 0; col <= grid[row].length; col++) {
+        const cell = col < grid[row].length ? grid[row][col] : '#'; // Treat end of row as black
+        const isWordCell = cell !== '#'; // Any non-black cell can be part of a word
+        
+        if (isWordCell && start === -1) {
+          start = col;
+        } else if (!isWordCell && start !== -1) {
+          const length = col - start;
+          if (length >= 2) { // At least 2 cells
+            words.push([[row, start], [row, col - 1]]);
+            console.log(`Found horizontal word: row ${row}, cols ${start}-${col - 1} (length ${length})`);
+          }
+          start = -1;
+        }
+      }
+    }
+    
+    // Detect vertical words
+    for (let col = 0; col < grid[0].length; col++) {
+      let start = -1;
+      for (let row = 0; row <= grid.length; row++) {
+        const cell = row < grid.length ? grid[row][col] : '#'; // Treat end of column as black
+        const isWordCell = cell !== '#'; // Any non-black cell can be part of a word
+        
+        if (isWordCell && start === -1) {
+          start = row;
+        } else if (!isWordCell && start !== -1) {
+          const length = row - start;
+          if (length >= 2) { // At least 2 cells
+            words.push([[start, col], [row - 1, col]]);
+            console.log(`Found vertical word: col ${col}, rows ${start}-${row - 1} (length ${length})`);
+          }
+          start = -1;
+        }
+      }
+    }
+    
+    this.detectedWords.set(words);
+    this.autoGenerateClues(words);
+    console.log(`Local word detection completed: Found ${words.length} words total`);
+  }
+
+  private autoGenerateClues(words: [number, number][][]): void {
+    const currentClues = this.clues();
+    const refreshedClues: Clue[] = [];
+    
+    // For each detected word, either keep existing clue or create new one
     words.forEach(word => {
       const [[startRow, startCol], [endRow, endCol]] = word;
       
@@ -566,14 +635,21 @@ export class PuzzleCreatorComponent {
       // Only create clues for words with 2+ letters
       if (length >= 2) {
         // Check if clue already exists for this position and direction
-        const existingClue = this.clues().find(c => 
+        const existingClue = currentClues.find(c => 
           c.direction === direction &&
           c.start_index[0] === startRow &&
           c.start_index[1] === startCol
         );
         
-        if (!existingClue) {
-          newClues.push({
+        if (existingClue) {
+          // Keep existing clue but update length if it changed
+          refreshedClues.push({
+            ...existingClue,
+            length
+          });
+        } else {
+          // Create new clue
+          refreshedClues.push({
             start_index: [startRow, startCol],
             direction,
             length,
@@ -583,35 +659,13 @@ export class PuzzleCreatorComponent {
       }
     });
     
-    // Add new clues to existing ones
-    if (newClues.length > 0) {
-      this.clues.set([...this.clues(), ...newClues]);
-    }
+    // Replace all clues with the refreshed list
+    this.clues.set(refreshedClues);
     
-    // Remove clues that no longer have corresponding words
-    this.removeOrphanedClues(words);
+    console.log(`Clues refreshed: ${refreshedClues.length} clues for ${words.length} words`);
   }
 
-  private removeOrphanedClues(words: [number, number][][]): void {
-    const currentClues = this.clues();
-    const validClues = currentClues.filter(clue => {
-      return words.some(word => {
-        const [[startRow, startCol], [endRow, endCol]] = word;
-        const isHorizontal = startRow === endRow;
-        const direction = isHorizontal ? 'horizontal' : 'vertical';
-        
-        return (
-          clue.direction === direction &&
-          clue.start_index[0] === startRow &&
-          clue.start_index[1] === startCol
-        );
-      });
-    });
-    
-    if (validClues.length !== currentClues.length) {
-      this.clues.set(validClues);
-    }
-  }
+
 
   protected getDetectedWordCount(): number {
     return this.detectedWords().length;
