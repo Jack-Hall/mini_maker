@@ -65,6 +65,94 @@
             <li><strong>Arrow keys:</strong> Navigate grid</li>
           </ul>
         </div>
+
+        <div class="clue-actions">
+          <h4>Clue Management</h4>
+          <button 
+            class="add-clue-btn" 
+            (click)="addClue()"
+            [disabled]="!activeCell()">
+            Add Clue for Current Word
+          </button>
+        </div>
+
+        @if (acrossClues().length > 0 || downClues().length > 0) {
+          <div class="clues-preview">
+            <h4>Clues</h4>
+            
+            @if (acrossClues().length > 0) {
+              <div class="clues-section">
+                <h5>Across</h5>
+                <div class="clues-list">
+                  @for (clue of acrossClues(); track $index) {
+                    <div class="clue-item" [class.active-clue]="isClueActive(clue)" [class.editing]="isEditingClue(clue)">
+                      <span class="clue-number">{{ $index + 1 }}.</span>
+                      @if (isEditingClue(clue)) {
+                        <input 
+                          #clueInput
+                          type="text" 
+                          [value]="clue.clue"
+                          (blur)="updateClue(clue, clueInput.value)"
+                          (keydown.enter)="updateClue(clue, clueInput.value)"
+                          (keydown.escape)="stopEditingClue()"
+                          class="clue-edit-input"
+                          autofocus>
+                      } @else {
+                        <span class="clue-text" (dblclick)="startEditingClue(clue)">{{ clue.clue }}</span>
+                        <button 
+                          class="edit-clue-btn" 
+                          (click)="startEditingClue(clue)"
+                          title="Edit clue">
+                          ✏️
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (downClues().length > 0) {
+              <div class="clues-section">
+                <h5>Down</h5>
+                <div class="clues-list">
+                  @for (clue of downClues(); track $index) {
+                    <div class="clue-item" [class.active-clue]="isClueActive(clue)" [class.editing]="isEditingClue(clue)">
+                      <span class="clue-number">{{ $index + 1 }}.</span>
+                      @if (isEditingClue(clue)) {
+                        <input 
+                          #clueInput
+                          type="text" 
+                          [value]="clue.clue"
+                          (blur)="updateClue(clue, clueInput.value)"
+                          (keydown.enter)="updateClue(clue, clueInput.value)"
+                          (keydown.escape)="stopEditingClue()"
+                          class="clue-edit-input"
+                          autofocus>
+                      } @else {
+                        <span class="clue-text" (dblclick)="startEditingClue(clue)">{{ clue.clue }}</span>
+                        <button 
+                          class="edit-clue-btn" 
+                          (click)="startEditingClue(clue)"
+                          title="Edit clue">
+                          ✏️
+                        </button>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+
+            @if (activeClue()) {
+              <div class="selected-clue">
+                <strong>Active:</strong>
+                <span class="selected-clue-direction">{{ activeClue()!.direction === 'horizontal' ? 'Across' : 'Down' }}</span>
+                <span class="selected-clue-text">{{ activeClue()!.clue }}</span>
+              </div>
+            }
+          </div>
+        }
       </div>
     </div>
   </div>

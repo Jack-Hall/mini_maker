@@ -187,6 +187,7 @@ export class PuzzleSolverComponent {
     );
   }
 
+ 
   private isEditable(row: number, col: number): boolean {
     const grid = this.userSolution();
     return grid[row]?.[col] !== '#';

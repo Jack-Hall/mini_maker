@@ -58,10 +58,10 @@
           <h3>Across</h3>
           <div class="clues-list">
             @for (clue of across_clues(); track $index) {
-              <div class="clue-item" [class.active-clue]="isClueActive(clue)">
-                <span class="clue-number">{{ $index + 1 }}.</span>
-                <span class="clue-text">{{ clue.clue }}</span>
-              </div>
+              <span class="clue-number">{{ $index + 1 }}.</span>
+
+              <span class="clue-text">{{ clue.clue }}</span>
+
             }
           </div>
         </div>
@@ -70,10 +70,9 @@
           <h3>Down</h3>
           <div class="clues-list">
             @for (clue of down_clues(); track $index) {
-              <div class="clue-item" [class.active-clue]="isClueActive(clue)">
                 <span class="clue-number">{{ $index + 1 }}.</span>
                 <span class="clue-text">{{ clue.clue }}</span>
-              </div>
+
             }
           </div>
         </div>

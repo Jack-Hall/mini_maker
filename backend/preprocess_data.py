@@ -218,8 +218,8 @@ def get_horizontal_words(grid):
         while i < len(row):
             char = row[i]
             while i < len(row) and char == "#":
-                char = row[i]
                 i +=1
+                char = row[i]
             word_start = i
             while i < len(row) and char == "_":
                 char = row[i]
