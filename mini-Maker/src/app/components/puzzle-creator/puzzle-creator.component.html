@@ -10,24 +10,31 @@
   <div class="creator-container">
     <div class="grid-editor">
       <h3>Grid Editor</h3>
-      <p class="instruction">Click on cells to edit them. Type letters or spaces.</p>
+      <p class="instruction">Click cells to edit. Right-click or Ctrl+Delete to toggle black cells. Enter to toggle direction.</p>
       
       <div class="editor-grid">
         @for (row of grid(); track $index; let rowIndex = $index) {
           <div class="editor-row">
             @for (cell of row; track $index; let colIndex = $index) {
               <div 
-                class="editor-cell"
-                [class.selected]="selectedCell()?.row === rowIndex && selectedCell()?.col === colIndex"
-                (click)="onCellClick(rowIndex, colIndex)">
-                                 <input 
-                   #inputField
-                   type="text" 
-                   maxlength="1"
-                   [value]="cell"
-                   (input)="onCellInput(rowIndex, colIndex, inputField.value)"
-                   class="cell-input"
-                   [class.selected]="selectedCell()?.row === rowIndex && selectedCell()?.col === colIndex">
+                [class]="getCellClass(rowIndex, colIndex)"
+                (click)="onCellClick(rowIndex, colIndex)"
+                (contextmenu)="onCellRightClick(rowIndex, colIndex, $event)">
+                @if (cell === '#') {
+                  <div class="blocked-cell"></div>
+                } @else {
+                  <input 
+                    #inputField
+                    type="text" 
+                    maxlength="1"
+                    [value]="cell"
+                    (input)="onCellInput(rowIndex, colIndex, inputField.value)"
+                    (focus)="onCellFocus(rowIndex, colIndex)"
+                    (keydown)="onCellKeydown(rowIndex, colIndex, $event)"
+                    [attr.data-row]="rowIndex"
+                    [attr.data-col]="colIndex"
+                    class="cell-input">
+                }
               </div>
             }
           </div>
@@ -43,8 +50,20 @@
         
         <div class="grid-info">
           <h4>Grid Information</h4>
-          <p><strong>Size:</strong> {{ grid().length }} × {{ grid()[0]?.length || 0 }}</p>
-          <p><strong>Cells:</strong> {{ grid().length * (grid()[0]?.length || 0) }}</p>
+          <p><strong>Size:</strong> {{ grid().length }} × {{ grid()[0].length }}</p>
+          <p><strong>Total Cells:</strong> {{ grid().length * grid()[0].length }}</p>
+          <p><strong>Black Cells:</strong> {{ (grid() | json).split('"#"').length - 1 }}</p>
+          <p><strong>Direction:</strong> {{ activeDirection() === 'horizontal' ? 'Across' : 'Down' }}</p>
+        </div>
+        
+        <div class="controls-info">
+          <h4>Controls</h4>
+          <ul>
+            <li><strong>Right-click:</strong> Toggle black cell</li>
+            <li><strong>Ctrl+Delete:</strong> Toggle black cell</li>
+            <li><strong>Enter:</strong> Switch direction</li>
+            <li><strong>Arrow keys:</strong> Navigate grid</li>
+          </ul>
         </div>
       </div>
     </div>

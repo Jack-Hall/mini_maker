@@ -33,6 +33,7 @@ export class PuzzleSolverComponent {
   protected readonly userSolution = signal<string[][]>([]);
   protected readonly activeDirection = signal<'horizontal' | 'vertical'>('horizontal');
   protected readonly activeCell = signal<{ row: number; col: number } | null>(null);
+  protected readonly editingClue = signal<Clue | null>(null);
   protected readonly activeClue = computed<Clue | null>(() => {
     const p = this.puzzle();
     const active = this.activeCell();
@@ -102,9 +103,17 @@ export class PuzzleSolverComponent {
     if (currentSolution[row] && currentSolution[row][col] !== '#') {
       currentSolution[row][col] = value.toUpperCase();
       this.userSolution.set([...currentSolution]);
-
+      let advanced = false;
       if (value && this.shouldAdvanceToNextCell(row, col)) {
         this.focusNextCell(row, col);
+        advanced = true;
+      }
+
+      if (!advanced) {
+        const clue = this.activeClue();
+        if (clue && this.isClueComplete(clue)) {
+          this.focusFirstCellOfNextClue(clue);
+        }
       }
     }
   }
@@ -317,6 +326,97 @@ export class PuzzleSolverComponent {
 
       if (targetRow < 0 || targetRow >= grid.length || targetCol < 0 || targetCol >= grid[0].length) {
         break;
+      }
+    }
+  }
+
+  private getClueCells(clue: Clue): Array<{ row: number; col: number }> {
+    const cells: Array<{ row: number; col: number }> = [];
+    const [startRow, startCol] = clue.start_index;
+    for (let i = 0; i < clue.length; i++) {
+      const row = clue.direction === 'horizontal' ? startRow : startRow + i;
+      const col = clue.direction === 'horizontal' ? startCol + i : startCol;
+      cells.push({ row, col });
+    }
+    return cells;
+  }
+
+  private isClueComplete(clue: Clue): boolean {
+    const grid = this.userSolution();
+    const cells = this.getClueCells(clue);
+    for (const { row, col } of cells) {
+      const val = grid[row]?.[col];
+      if (!val || val === '#') return false;
+    }
+    return true;
+  }
+
+  private getOrderedCluesByDirection(direction: 'horizontal' | 'vertical'): Clue[] {
+    const p = this.puzzle();
+    if (!p) return [];
+    const filtered = p.clues.filter((c) => c.direction === direction);
+    return [...filtered].sort((a, b) => {
+      const [ar, ac] = a.start_index;
+      const [br, bc] = b.start_index;
+      if (ar !== br) return ar - br;
+      return ac - bc;
+    });
+  }
+
+  private findNextClue(current: Clue): Clue | null {
+    const currentDirection = current.direction;
+    const list = this.getOrderedCluesByDirection(currentDirection);
+    const idx = list.findIndex(
+      (c) =>
+        c.direction === current.direction &&
+        c.length === current.length &&
+        c.start_index[0] === current.start_index[0] &&
+        c.start_index[1] === current.start_index[1]
+    );
+    if (idx >= 0 && idx + 1 < list.length) {
+      return list[idx + 1];
+    }
+    // wrap to the other direction's first clue
+    const other = this.getOrderedCluesByDirection(currentDirection === 'horizontal' ? 'vertical' : 'horizontal');
+    return other.length > 0 ? other[0] : null;
+  }
+
+  private findNextUnfilledCellInClue(clue: Clue): { row: number; col: number } | null {
+    const grid = this.userSolution();
+    const cells = this.getClueCells(clue);
+    for (const { row, col } of cells) {
+      const val = grid[row]?.[col];
+      if (!val || val === '' || val === ' ') {
+        return { row, col };
+      }
+    }
+    return null; // All cells filled
+  }
+
+  private focusFirstCellOfClue(clue: Clue): void {
+    const [row, col] = clue.start_index;
+    this.activeDirection.set(clue.direction);
+    this.activeCell.set({ row, col });
+    setTimeout(() => {
+      const el = document.querySelector(`[data-row='${row}'][data-col='${col}']`) as HTMLInputElement | null;
+      if (el) el.focus();
+    }, 0);
+  }
+
+  private focusFirstCellOfNextClue(current: Clue): void {
+    const next = this.findNextClue(current);
+    if (next) {
+      const unfilledCell = this.findNextUnfilledCellInClue(next);
+      if (unfilledCell) {
+        this.activeDirection.set(next.direction);
+        this.activeCell.set(unfilledCell);
+        setTimeout(() => {
+          const el = document.querySelector(`[data-row='${unfilledCell.row}'][data-col='${unfilledCell.col}']`) as HTMLInputElement | null;
+          if (el) el.focus();
+        }, 0);
+      } else {
+        // If next clue is complete, try the one after that
+        this.focusFirstCellOfNextClue(next);
       }
     }
   }
