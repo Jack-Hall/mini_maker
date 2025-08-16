@@ -219,15 +219,19 @@ def get_horizontal_words(grid):
             char = row[i]
             while i < len(row) and char == "#":
                 i +=1
+                if i == len(row):
+                    break
                 char = row[i]
             word_start = i
             while i < len(row) and char == "_":
                 char = row[i]
                 i += 1
             #add the word.
-            word_end = i-1
-            if word_end - word_start == 1:
-                row_index += 1
+            if(i <= len(row) and char == '#'):
+                word_end = i-2
+            else:
+                word_end = i-1
+            if word_end - word_start < 1:
                 continue
             words.append(((row_index, word_start), (row_index, word_end)))
         row_index += 1
@@ -271,16 +275,25 @@ def test_get_words():
     print(grid)
     print(get_words_from_grid(grid))
     grid = [
-        ["#", "_", "_", "_", "_"],
         ["_", "_", "_", "_", "_"],
         ["_", "_", "_", "_", "_"],
+        ["#", "#", "#", "#", "#"],
         ["_", "_", "_", "_", "_"],
-        ["_", "_", "_", "#", "#"],
+        ["_", "_", "_", "_", "_"],
     ]
     grid = np.array(grid)
     print(grid)
     print(get_words_from_grid(grid))
-
+    grid = [
+        ["#", "_", "_", "_", "#"],
+        ["_", "_", "_", "_", "#"],
+        ["_", "_", "_", "_", "#"],
+        ["_", "_", "_", "#", "#"],
+        ["_", "_", "#", "#", "#"],
+    ]
+    grid = np.array(grid)
+    print(grid)
+    print(get_words_from_grid(grid))
 
 
 
