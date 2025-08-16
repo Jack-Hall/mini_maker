@@ -52,21 +52,7 @@ class Grid:
         # words can be horizontal or vertical.
 
         # dummy init for now, just make every row and column a word.
-        self.words = [
-            # rows
-            ((0, 0), (0, 4)),
-            ((1, 0), (1, 4)),
-            ((2, 0), (2, 4)),
-            ((3, 0), (3, 4)),
-            ((4, 0), (4, 4)),
-            # columns
-            #
-            ((0, 0), (4, 0)),
-            ((0, 1), (4, 1)),
-            ((0, 2), (4, 2)),
-            ((0, 3), (4, 3)),
-            ((0, 4), (4, 4)),
-        ]
+        self.words = get_words_from_grid(self.grid)
 
     def find_grid_solutions(self):
         # find all solutions to the grid.
@@ -298,22 +284,29 @@ def test_get_words():
 
 
 def setup_test_grid(wordstr):
+    grid = [
+        ["#", "j", "a", "c", "k"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
+        ["j", "a", "c", "k", "#"],
+    ]
     words = ["___p_", "___e_", "horny", "___i_", "use"]
     # turn into 2d np char array
-    grid = np.array([[char for char in word] for word in words])
+    # grid = np.array([[char for char in word] for word in words])
     return Grid(grid, wordstr)
 
 
 if __name__ == "__main__":
     test_get_words()
-    # data = "backend/words_alpha.txt"
-    # words = preprocess_data(data)
-    # # save the words to a txt file.
-    # top_level_sets = compute_all_sets(words)
-    # word_set = WordSet(words)
-    # grid = setup_test_grid(words)
-    # # grid = Grid(words=words)
-    # grid.find_grid_solutions()
+    data = "backend/words_alpha.txt"
+    words = preprocess_data(data)
+    # save the words to a txt file.
+    top_level_sets = compute_all_sets(words)
+    word_set = WordSet(words)
+    grid = setup_test_grid(words)
+    # grid = Grid(words=words)
+    grid.find_grid_solutions()
     # print(len(grid.solutions))
     # ipdb.set_trace()
     # with open("short_words.txt", "w") as file:
