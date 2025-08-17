@@ -27,7 +27,7 @@ class WordSet:
             return self.words
         for i, char in enumerate(pattern):
             if pattern[i] != "_":
-                matching_sets.append(self.top_level_sets[i][char])
+                matching_sets.append(self.top_level_sets[length][i][char])
         if len(matching_sets) == 0:
             return []
         # get the intersection to find all matching words
@@ -170,15 +170,16 @@ def preprocess_data(data):
 
 
 # def word_lookup(pattern):
-
+MAX_LENGTH = 5
 
 def compute_all_sets(words):
     # top level sets for five letter words:
-    top_level_sets = [{char: set() for char in chars} for _ in range(5)]
+    top_level_sets = {length: [{char: set() for char in chars} for _ in range(length)] for length in range(2,6)}
     # fill in the top level sets
     for word in words:
+        length = len(word)
         for i, char in enumerate(word):
-            top_level_sets[i][char].add(word)
+            top_level_sets[length][i][char].add(word)
 
     return top_level_sets
 
