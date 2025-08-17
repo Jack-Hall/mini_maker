@@ -7,11 +7,16 @@ chars = "abcdefghijklmnopqrstuvwxyz"
 # turn into char list
 chars = list(chars)
 
+MAX_LENGTH = 5
 
 class WordSet:
     def __init__(self, words):
         self.words = words
         self.top_level_sets = compute_all_sets(words)
+
+        words_size = np.array([len(word) for word in words])
+        self.words_of_length = {i: words[words_size == i] for i in range(1,MAX_LENGTH+1)}
+
 
     def word_lookup(self, pattern):
         """
@@ -22,9 +27,13 @@ class WordSet:
         assert length <= 5, "Pattern must be 5 characters long"
         # find all words that match the pattern
         num_wildcards = pattern.count("_")
+        print('length of pattern: ', length)
+        
         matching_sets = []
         if num_wildcards == length:
-            return self.words
+            print("returning all words")
+            print(self.words_of_length[length][0:10])
+            return self.words_of_length[length]
         for i, char in enumerate(pattern):
             if pattern[i] != "_":
                 matching_sets.append(self.top_level_sets[length][i][char])
@@ -73,13 +82,17 @@ class Grid:
                 return
             if word_str.find("_") != -1:
                 incomplete = True
+                print("size of word str", len(word_str))
                 word_lookup = self.wordSet.word_lookup(word_str)
+                print("found ", len(word_lookup))
                 if len(word_lookup) == 0:
                     return
 
                 if not self.is_valid_puzzle(word, word_str):
+                    print("puzzle invalid continuing")
                     continue
                 for new_word in word_lookup:
+                    print("length of candidate word: ", new_word, len(new_word))
                     if len(self.solutions) > 1000:
                         return
                     if self.get_word_direction(word) == "vertical":
@@ -91,6 +104,7 @@ class Grid:
                     else:
                         # For horizontal words, reshape to row vector
                         word_array = np.array(list(new_word)).reshape(1, -1)
+
                         self.grid[
                             word[0][0] : word[1][0] + 1, word[0][1] : word[1][1] + 1
                         ] = word_array.T
@@ -164,13 +178,15 @@ def preprocess_data(data):
     words = words
     words_size = np.array([len(word) for word in words])
     # find all words that are less than 6 characters.
-    words = words[words_size == 5]  # return the chunks
+    words = words[words_size <= 5]  # return the chunks
+    words_size = np.array([len(word) for word in words])
+    words = words[ words_size > 1]  # return the chunks
+ 
     print(len(words))
     return words
 
 
 # def word_lookup(pattern):
-MAX_LENGTH = 5
 
 def compute_all_sets(words):
     # top level sets for five letter words:
@@ -286,16 +302,16 @@ def test_get_words():
 
 def setup_test_grid(wordstr):
     grid = [
-        ["#", "j", "a", "c", "k"],
         ["_", "_", "_", "_", "_"],
         ["_", "_", "_", "_", "_"],
         ["_", "_", "_", "_", "_"],
-        ["j", "a", "c", "k", "#"],
+        ["_", "_", "_", "_", "_"],
+        ["_", "_", "_", "_", "_"],
     ]
     words = ["___p_", "___e_", "horny", "___i_", "use"]
     # turn into 2d np char array
     # grid = np.array([[char for char in word] for word in words])
-    return Grid(grid, wordstr)
+    return Grid(np.array(grid), wordstr)
 
 
 if __name__ == "__main__":
