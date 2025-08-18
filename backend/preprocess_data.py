@@ -27,12 +27,12 @@ class WordSet:
         assert length <= 5, "Pattern must be 5 characters long"
         # find all words that match the pattern
         num_wildcards = pattern.count("_")
-        print('length of pattern: ', length)
+        # print('length of pattern: ', length)
         
         matching_sets = []
         if num_wildcards == length:
-            print("returning all words")
-            print(self.words_of_length[length][0:10])
+            # print("returning all words")
+            # print(self.words_of_length[length][0:10])
             return self.words_of_length[length]
         for i, char in enumerate(pattern):
             if pattern[i] != "_":
@@ -82,17 +82,17 @@ class Grid:
                 return
             if word_str.find("_") != -1:
                 incomplete = True
-                print("size of word str", len(word_str))
+                # print("size of word str", len(word_str))
                 word_lookup = self.wordSet.word_lookup(word_str)
-                print("found ", len(word_lookup))
+                # print("found ", len(word_lookup))
                 if len(word_lookup) == 0:
                     return
 
                 if not self.is_valid_puzzle(word, word_str):
-                    print("puzzle invalid continuing")
+                    # print("puzzle invalid continuing")
                     continue
                 for new_word in word_lookup:
-                    print("length of candidate word: ", new_word, len(new_word))
+                    # print("length of candidate word: ", new_word, len(new_word))
                     if len(self.solutions) > 1000:
                         return
                     if self.get_word_direction(word) == "vertical":
@@ -181,8 +181,8 @@ def preprocess_data(data):
     words = words[words_size <= 5]  # return the chunks
     words_size = np.array([len(word) for word in words])
     words = words[ words_size > 1]  # return the chunks
- 
-    print(len(words))
+    # randomly shuffle the words array
+    np.random.shuffle(words)
     return words
 
 
@@ -226,7 +226,7 @@ def get_horizontal_words(grid):
                     break
                 char = row[i]
             word_start = i
-            while i < len(row) and char == "_":
+            while i < len(row) and char != "#":
                 char = row[i]
                 i += 1
             #add the word.
@@ -302,13 +302,13 @@ def test_get_words():
 
 def setup_test_grid(wordstr):
     grid = [
-        ["_", "_", "_", "_", "_"],
-        ["_", "_", "_", "_", "_"],
-        ["_", "_", "_", "_", "_"],
-        ["_", "_", "_", "_", "_"],
-        ["_", "_", "_", "_", "_"],
+        ["#", "#", "c", "i", "g"],
+        ["#", "g", "u", "r", "u"],
+        ["c", "a", "n", "o", "n"],
+        ["_", "_", "_", "n", "#"],
+        ["_", "_", "_", "#", "#"],
     ]
-    words = ["___p_", "___e_", "horny", "___i_", "use"]
+    # words = ["___p_", "___e_", "horny", "___i_", "use"]
     # turn into 2d np char array
     # grid = np.array([[char for char in word] for word in words])
     return Grid(np.array(grid), wordstr)
