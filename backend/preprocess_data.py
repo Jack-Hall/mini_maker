@@ -78,7 +78,7 @@ class Grid:
                 word_str = word_str.T
             word_str = "".join(word_str.flatten())
 
-            if len(self.solutions) > 1000:
+            if len(self.solutions) > 128:
                 return
             if word_str.find("_") != -1:
                 incomplete = True
@@ -93,7 +93,7 @@ class Grid:
                     continue
                 for new_word in word_lookup:
                     # print("length of candidate word: ", new_word, len(new_word))
-                    if len(self.solutions) > 1000:
+                    if len(self.solutions) > 128:
                         return
                     if self.get_word_direction(word) == "vertical":
                         # For vertical words, reshape to column vector

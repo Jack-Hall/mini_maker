@@ -137,6 +137,10 @@ def find_grid_solutions():
             return jsonify({'error': f'Invalid grid format: {str(e)}'}), 400
         
         # Validate grid content
+        for row in grid_array:
+            for cell in row:
+                if cell == "" or cell == " ":
+                    cell = "_"
         valid_chars = set('abcdefghijklmnopqrstuvwxyz_#')
         for row in grid_array:
             for cell in row:
@@ -144,7 +148,7 @@ def find_grid_solutions():
                     return jsonify({'error': f'Invalid character in grid: {cell}. Only a-z, A-Z, and _ are allowed'}), 400
         
         # Convert to uppercase for consistency
-        grid_array = np.char.upper(grid_array)
+        grid_array = np.char.lower(grid_array)
         
         # Create Grid instance
         grid = Grid(grid=grid_array, words=words)

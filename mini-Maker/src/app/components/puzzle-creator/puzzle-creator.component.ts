@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CrosswordService, GetWordsResponse } from '../../services/crossword.service';
+import { CrosswordService, GetWordsResponse, GridSolutionResponse } from '../../services/crossword.service';
 
 interface Clue {
   start_index: [number, number];
@@ -37,6 +37,9 @@ export class PuzzleCreatorComponent {
   protected readonly clues = signal<Clue[]>([]);
   protected readonly editingClue = signal<Clue | null>(null);
   protected readonly isUpdatingWords = signal(false);
+  protected readonly isFindingSolutions = signal(false);
+  protected readonly foundSolutions = signal<string[][][]>([]);
+  protected readonly solutionError = signal<string | null>(null);
   
   protected readonly acrossClues = computed<Clue[]>(() => 
     this.clues().filter(clue => clue.direction === 'horizontal')
@@ -156,6 +159,38 @@ export class PuzzleCreatorComponent {
       row.map(() => '')
     );
     this.grid.set(emptyGrid);
+    this.foundSolutions.set([]);
+    this.solutionError.set(null);
+  }
+
+  protected findSolutions(): void {
+    this.isFindingSolutions.set(true);
+    this.solutionError.set(null);
+    this.foundSolutions.set([]);
+
+    const grid = this.grid();
+    
+    this.crosswordService.findGridSolutions(grid).subscribe({
+      next: (response: GridSolutionResponse) => {
+        this.foundSolutions.set(response.solutions);
+        this.isFindingSolutions.set(false);
+        console.log(`Found ${response.solution_count} solutions`);
+      },
+      error: (err) => {
+        console.error('Error finding solutions:', err);
+        this.solutionError.set(
+          err.error?.error || 'Failed to find solutions. Please check your grid and try again.'
+        );
+        this.isFindingSolutions.set(false);
+      }
+    });
+  }
+
+  protected applySolution(solution: string[][]): void {
+    this.grid.set([...solution]);
+    // Refresh word detection after applying solution
+    this.immediateWordRefresh();
+    this.updateWordsFromGrid();
   }
 
   protected isActiveCell(row: number, col: number): boolean {

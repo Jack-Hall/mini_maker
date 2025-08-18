@@ -50,7 +50,11 @@ export class CrosswordService {
   }
 
   findGridSolutions(grid: string[][]): Observable<GridSolutionResponse> {
-    const request: GridSolutionRequest = { grid };
+    // Replace empty strings with underscores in the grid
+    const processedGrid = grid.map(row =>
+      row.map(cell => cell === '' ? '_' : cell)
+    );
+    const request: GridSolutionRequest = { grid: processedGrid };
     return this.http.post<GridSolutionResponse>(`${this.apiUrl}/find_grid_solutions`, request);
   }
 

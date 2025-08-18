@@ -3,6 +3,16 @@
     <h1>Crossword Puzzle Creator</h1>
     <div class="header-actions">
       <button class="clear-btn" (click)="clearGrid()">Clear Grid</button>
+      <button 
+        class="solve-btn" 
+        (click)="findSolutions()"
+        [disabled]="isFindingSolutions()">
+        @if (isFindingSolutions()) {
+          Finding Solutions...
+        } @else {
+          Find Solutions
+        }
+      </button>
       <button class="save-btn" (click)="savePuzzle()">Save Puzzle</button>
     </div>
   </div>
@@ -165,6 +175,47 @@
               <span class="selected-clue-text">{{ activeClue()!.clue }}</span>
             </div>
           }
+        </div>
+      }
+
+      <!-- Solutions display panel -->
+      @if (foundSolutions().length > 0) {
+        <div class="solutions-panel">
+          <h3>Found Solutions ({{ foundSolutions().length }})</h3>
+          <div class="solutions-container">
+            @for (solution of foundSolutions(); track $index; let solutionIndex = $index) {
+              <div class="solution-item">
+                <div class="solution-header">
+                  <h4>Solution {{ solutionIndex + 1 }}</h4>
+                  <button 
+                    class="apply-solution-btn" 
+                    (click)="applySolution(solution)"
+                    title="Apply this solution to the grid">
+                    Apply Solution
+                  </button>
+                </div>
+                <div class="solution-grid">
+                  @for (row of solution; track $index; let rowIndex = $index) {
+                    <div class="solution-row">
+                      @for (cell of row; track $index; let colIndex = $index) {
+                        <div class="solution-cell" [class.blocked]="cell === '#'">
+                          {{ cell === '#' ? '' : cell }}
+                        </div>
+                      }
+                    </div>
+                  }
+                </div>
+              </div>
+            }
+          </div>
+        </div>
+      }
+
+      @if (solutionError()) {
+        <div class="error-panel">
+          <h3>Error Finding Solutions</h3>
+          <p class="error-message">{{ solutionError() }}</p>
+          <button class="retry-btn" (click)="findSolutions()">Try Again</button>
         </div>
       }
   </div>
