@@ -10,6 +10,19 @@ interface Clue {
   clue: string;
 }
 
+interface WordPosition {
+  start: [number, number];
+  end: [number, number];
+  direction: 'horizontal' | 'vertical';
+  length: number;
+  text: string;
+}
+
+interface SelectedWord {
+  position: WordPosition;
+  text: string;
+}
+
 @Component({
   selector: 'app-puzzle-creator',
   standalone: true,
@@ -39,6 +52,8 @@ export class PuzzleCreatorComponent {
   protected readonly isUpdatingWords = signal(false);
   protected readonly isFindingSolutions = signal(false);
   protected readonly foundSolutions = signal<string[][][]>([]);
+  protected readonly allSolutions = signal<string[][][]>([]);
+  protected readonly selectedWords = signal<SelectedWord[]>([]);
   protected readonly solutionError = signal<string | null>(null);
   
   protected readonly acrossClues = computed<Clue[]>(() => 
@@ -63,6 +78,22 @@ export class PuzzleCreatorComponent {
         return sc === active.col && active.row >= sr && active.row < sr + clue.length;
       }
     }) || null;
+  });
+
+  protected readonly filteredSolutions = computed<string[][][]>(() => {
+    const selected = this.selectedWords();
+    const allSolutions = this.allSolutions();
+    
+    if (selected.length === 0) {
+      return allSolutions;
+    }
+    
+    return allSolutions.filter(solution => {
+      return selected.every(selectedWord => {
+        const actualWord = this.extractWordFromSolution(solution, selectedWord.position);
+        return actualWord === selectedWord.text;
+      });
+    });
   });
 
   protected onCellClick(row: number, col: number): void {
@@ -160,6 +191,8 @@ export class PuzzleCreatorComponent {
     );
     this.grid.set(emptyGrid);
     this.foundSolutions.set([]);
+    this.allSolutions.set([]);
+    this.selectedWords.set([]);
     this.solutionError.set(null);
   }
 
@@ -167,11 +200,13 @@ export class PuzzleCreatorComponent {
     this.isFindingSolutions.set(true);
     this.solutionError.set(null);
     this.foundSolutions.set([]);
+    this.selectedWords.set([]);
 
     const grid = this.grid();
     
     this.crosswordService.findGridSolutions(grid).subscribe({
       next: (response: GridSolutionResponse) => {
+        this.allSolutions.set(response.solutions);
         this.foundSolutions.set(response.solutions);
         this.isFindingSolutions.set(false);
         console.log(`Found ${response.solution_count} solutions`);
@@ -704,5 +739,137 @@ export class PuzzleCreatorComponent {
 
   protected getDetectedWordCount(): number {
     return this.detectedWords().length;
+  }
+
+  protected getWordsFromSolution(solution: string[][]): WordPosition[] {
+    const words: WordPosition[] = [];
+    
+    // Find horizontal words
+    for (let row = 0; row < solution.length; row++) {
+      let start = -1;
+      for (let col = 0; col <= solution[row].length; col++) {
+        const cell = col < solution[row].length ? solution[row][col] : '#';
+        const isWordCell = cell !== '#';
+        
+        if (isWordCell && start === -1) {
+          start = col;
+        } else if (!isWordCell && start !== -1) {
+          const length = col - start;
+          if (length >= 2) {
+            const text = solution[row].slice(start, col).join('');
+            words.push({
+              start: [row, start],
+              end: [row, col - 1],
+              direction: 'horizontal',
+              length,
+              text
+            });
+          }
+          start = -1;
+        }
+      }
+    }
+    
+    // Find vertical words
+    for (let col = 0; col < solution[0].length; col++) {
+      let start = -1;
+      for (let row = 0; row <= solution.length; row++) {
+        const cell = row < solution.length ? solution[row][col] : '#';
+        const isWordCell = cell !== '#';
+        
+        if (isWordCell && start === -1) {
+          start = row;
+        } else if (!isWordCell && start !== -1) {
+          const length = row - start;
+          if (length >= 2) {
+            const text = solution.slice(start, row).map(r => r[col]).join('');
+            words.push({
+              start: [start, col],
+              end: [row - 1, col],
+              direction: 'vertical',
+              length,
+              text
+            });
+          }
+          start = -1;
+        }
+      }
+    }
+    
+    return words;
+  }
+
+  protected extractWordFromSolution(solution: string[][], position: WordPosition): string {
+    const [startRow, startCol] = position.start;
+    const [endRow, endCol] = position.end;
+    
+    if (position.direction === 'horizontal') {
+      return solution[startRow].slice(startCol, endCol + 1).join('');
+    } else {
+      return solution.slice(startRow, endRow + 1).map(row => row[startCol]).join('');
+    }
+  }
+
+  protected selectWord(word: WordPosition, solution: string[][]): void {
+    const selectedWords = this.selectedWords();
+    const actualText = this.extractWordFromSolution(solution, word);
+    
+    // Check if this word position is already selected
+    const existingIndex = selectedWords.findIndex(sw => 
+      sw.position.start[0] === word.start[0] && 
+      sw.position.start[1] === word.start[1] &&
+      sw.position.direction === word.direction
+    );
+    
+    if (existingIndex >= 0) {
+      // If selecting the same word with same text, remove it (toggle off)
+      if (selectedWords[existingIndex].text === actualText) {
+        const newSelected = [...selectedWords];
+        newSelected.splice(existingIndex, 1);
+        this.selectedWords.set(newSelected);
+      } else {
+        // Update the selected text
+        const newSelected = [...selectedWords];
+        newSelected[existingIndex] = { position: word, text: actualText };
+        this.selectedWords.set(newSelected);
+      }
+    } else {
+      // Add new selection
+      this.selectedWords.set([...selectedWords, { position: word, text: actualText }]);
+    }
+    
+    // Update filtered solutions
+    this.foundSolutions.set(this.filteredSolutions());
+  }
+
+  protected isWordSelected(word: WordPosition): SelectedWord | null {
+    return this.selectedWords().find(sw => 
+      sw.position.start[0] === word.start[0] && 
+      sw.position.start[1] === word.start[1] &&
+      sw.position.direction === word.direction
+    ) || null;
+  }
+
+  protected clearSelectedWords(): void {
+    this.selectedWords.set([]);
+    this.foundSolutions.set(this.allSolutions());
+  }
+
+  protected getWordClass(word: WordPosition, solution: string[][]): string {
+    const selected = this.isWordSelected(word);
+    const classes = ['solution-word'];
+    
+    if (selected) {
+      const actualText = this.extractWordFromSolution(solution, word);
+      if (selected.text === actualText) {
+        classes.push('selected-word');
+      } else {
+        classes.push('conflicted-word');
+      }
+    } else {
+      classes.push('selectable-word');
+    }
+    
+    return classes.join(' ');
   }
 } 

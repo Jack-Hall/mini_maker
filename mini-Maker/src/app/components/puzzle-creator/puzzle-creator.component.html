@@ -181,7 +181,34 @@
       <!-- Solutions display panel -->
       @if (foundSolutions().length > 0) {
         <div class="solutions-panel">
-          <h3>Found Solutions ({{ foundSolutions().length }})</h3>
+          <div class="solutions-header">
+            <h3>Found Solutions</h3>
+            <div class="solutions-info">
+              <span class="solution-count">
+                Showing {{ foundSolutions().length }} of {{ allSolutions().length }} solutions
+              </span>
+              @if (selectedWords().length > 0) {
+                <button class="clear-selection-btn" (click)="clearSelectedWords()">
+                  Clear Selections ({{ selectedWords().length }})
+                </button>
+              }
+            </div>
+          </div>
+          
+          @if (selectedWords().length > 0) {
+            <div class="selected-words-panel">
+              <h4>Selected Words:</h4>
+              <div class="selected-words-list">
+                @for (selectedWord of selectedWords(); track $index) {
+                  <span class="selected-word-item">
+                    <strong>{{ selectedWord.text }}</strong>
+                    <small>({{ selectedWord.position.direction }})</small>
+                  </span>
+                }
+              </div>
+            </div>
+          }
+
           <div class="solutions-container">
             @for (solution of foundSolutions(); track $index; let solutionIndex = $index) {
               <div class="solution-item">
@@ -194,16 +221,32 @@
                     Apply Solution
                   </button>
                 </div>
-                <div class="solution-grid">
-                  @for (row of solution; track $index; let rowIndex = $index) {
-                    <div class="solution-row">
-                      @for (cell of row; track $index; let colIndex = $index) {
-                        <div class="solution-cell" [class.blocked]="cell === '#'">
-                          {{ cell === '#' ? '' : cell }}
-                        </div>
+                <div class="solution-grid-container">
+                  <div class="solution-grid">
+                    @for (row of solution; track $index; let rowIndex = $index) {
+                      <div class="solution-row">
+                        @for (cell of row; track $index; let colIndex = $index) {
+                          <div class="solution-cell" [class.blocked]="cell === '#'">
+                            {{ cell === '#' ? '' : cell }}
+                          </div>
+                        }
+                      </div>
+                    }
+                  </div>
+                  <div class="solution-words">
+                    <h5>Click words to filter solutions:</h5>
+                    <div class="words-list">
+                      @for (word of getWordsFromSolution(solution); track $index) {
+                        <button 
+                          [class]="getWordClass(word, solution)"
+                          (click)="selectWord(word, solution)"
+                          title="Click to select/deselect this word">
+                          <span class="word-text">{{ word.text }}</span>
+                          <span class="word-direction">({{ word.direction === 'horizontal' ? 'Across' : 'Down' }})</span>
+                        </button>
                       }
                     </div>
-                  }
+                  </div>
                 </div>
               </div>
             }
