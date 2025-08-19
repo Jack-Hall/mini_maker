@@ -55,6 +55,8 @@ export class PuzzleCreatorComponent {
   protected readonly allSolutions = signal<string[][][]>([]);
   protected readonly selectedWords = signal<SelectedWord[]>([]);
   protected readonly solutionError = signal<string | null>(null);
+  protected readonly currentWordPosition = signal<WordPosition | null>(null);
+  protected readonly showWordSuggestions = signal(false);
   
   protected readonly acrossClues = computed<Clue[]>(() => 
     this.clues().filter(clue => clue.direction === 'horizontal')
@@ -96,10 +98,31 @@ export class PuzzleCreatorComponent {
     });
   });
 
+  protected readonly availableWords = computed<string[]>(() => {
+    const wordPos = this.currentWordPosition();
+    const allSolutions = this.allSolutions();
+    
+    if (!wordPos || allSolutions.length === 0) {
+      return [];
+    }
+    
+    const words = new Set<string>();
+    
+    for (const solution of allSolutions) {
+      const word = this.extractWordFromSolution(solution, wordPos);
+      if (word && word.length === wordPos.length) {
+        words.add(word);
+      }
+    }
+    
+    return Array.from(words).sort();
+  });
+
   protected onCellClick(row: number, col: number): void {
     this.selectedCell.set({ row, col });
     this.activeCell.set({ row, col });
     this.isEditing.set(true);
+    this.updateCurrentWordPosition(row, col);
   }
 
   protected onCellRightClick(row: number, col: number, event: MouseEvent): void {
@@ -117,6 +140,7 @@ export class PuzzleCreatorComponent {
   protected onCellFocus(row: number, col: number): void {
     this.activeCell.set({ row, col });
     this.selectedCell.set({ row, col });
+    this.updateCurrentWordPosition(row, col);
   }
 
   protected onCellInput(row: number, col: number, value: string): void {
@@ -871,5 +895,117 @@ export class PuzzleCreatorComponent {
     }
     
     return classes.join(' ');
+  }
+
+  protected updateCurrentWordPosition(row: number, col: number): void {
+    const grid = this.grid();
+    const direction = this.activeDirection();
+    
+    // Find the word boundaries for the current cell
+    const wordPos = this.findWordBoundaries(row, col, direction, grid);
+    this.currentWordPosition.set(wordPos);
+    
+    // Show suggestions if we have solutions and the word is incomplete/empty
+    if (wordPos && this.allSolutions().length > 0) {
+      const currentWord = this.extractCurrentWord(wordPos, grid);
+      const hasEmptyOrIncompleteWord = currentWord.includes('') || currentWord.split('').some(c => c === '');
+      this.showWordSuggestions.set(hasEmptyOrIncompleteWord);
+    } else {
+      this.showWordSuggestions.set(false);
+    }
+  }
+
+  protected findWordBoundaries(row: number, col: number, direction: 'horizontal' | 'vertical', grid: string[][]): WordPosition | null {
+    if (grid[row][col] === '#') return null;
+    
+    let startRow = row;
+    let startCol = col;
+    let endRow = row;
+    let endCol = col;
+    
+    if (direction === 'horizontal') {
+      // Find start of horizontal word
+      while (startCol > 0 && grid[row][startCol - 1] !== '#') {
+        startCol--;
+      }
+      // Find end of horizontal word
+      while (endCol < grid[row].length - 1 && grid[row][endCol + 1] !== '#') {
+        endCol++;
+      }
+    } else {
+      // Find start of vertical word
+      while (startRow > 0 && grid[startRow - 1][col] !== '#') {
+        startRow--;
+      }
+      // Find end of vertical word
+      while (endRow < grid.length - 1 && grid[endRow + 1][col] !== '#') {
+        endRow++;
+      }
+    }
+    
+    const length = direction === 'horizontal' ? (endCol - startCol + 1) : (endRow - startRow + 1);
+    
+    // Only return word positions for words of length 2 or more
+    if (length >= 2) {
+      const text = direction === 'horizontal' 
+        ? grid[row].slice(startCol, endCol + 1).join('')
+        : grid.slice(startRow, endRow + 1).map(r => r[col]).join('');
+        
+      return {
+        start: [startRow, startCol],
+        end: [endRow, endCol],
+        direction,
+        length,
+        text
+      };
+    }
+    
+    return null;
+  }
+
+  protected extractCurrentWord(wordPos: WordPosition, grid: string[][]): string {
+    const [startRow, startCol] = wordPos.start;
+    const [endRow, endCol] = wordPos.end;
+    
+    if (wordPos.direction === 'horizontal') {
+      return grid[startRow].slice(startCol, endCol + 1).join('');
+    } else {
+      return grid.slice(startRow, endRow + 1).map(row => row[startCol]).join('');
+    }
+  }
+
+  protected applyWordToGrid(word: string): void {
+    const wordPos = this.currentWordPosition();
+    if (!wordPos) return;
+    
+    const grid = this.grid();
+    const newGrid = [...grid.map(row => [...row])];
+    
+    const [startRow, startCol] = wordPos.start;
+    
+    for (let i = 0; i < word.length; i++) {
+      if (wordPos.direction === 'horizontal') {
+        newGrid[startRow][startCol + i] = word[i];
+      } else {
+        newGrid[startRow + i][startCol] = word[i];
+      }
+    }
+    
+    this.grid.set(newGrid);
+    this.showWordSuggestions.set(false);
+    
+    // Refresh word detection
+    this.immediateWordRefresh();
+    this.updateWordsFromGrid();
+  }
+
+  protected toggleWordSuggestions(): void {
+    if (this.allSolutions().length > 0 && this.currentWordPosition()) {
+      this.showWordSuggestions.set(!this.showWordSuggestions());
+    }
+  }
+
+  protected closeWordSuggestions(): void {
+    this.showWordSuggestions.set(false);
   }
 } 

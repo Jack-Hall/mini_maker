@@ -313,6 +313,116 @@
   box-shadow: none;
 }
 
+.word-suggestions {
+  margin-top: 25px;
+  padding-top: 20px;
+  border-top: 1px solid #e0e0e0;
+}
+
+.word-suggestions h4 {
+  margin: 0 0 10px 0;
+  color: #333;
+  font-size: 1.1rem;
+  font-weight: 600;
+}
+
+.suggestions-info {
+  margin: 0 0 15px 0;
+  color: #666;
+  font-size: 0.9rem;
+  line-height: 1.4;
+}
+
+.suggestions-container {
+  background: #f8f9fa;
+  border-radius: 8px;
+  padding: 15px;
+  border: 1px solid #e9ecef;
+}
+
+.current-word-display {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-bottom: 15px;
+  padding-bottom: 10px;
+  border-bottom: 1px solid #dee2e6;
+}
+
+.current-word-label {
+  font-weight: 600;
+  color: #495057;
+  font-size: 0.9rem;
+}
+
+.current-word-text {
+  background: #fff;
+  padding: 4px 8px;
+  border-radius: 4px;
+  border: 1px solid #ced4da;
+  font-family: monospace;
+  font-size: 0.9rem;
+  color: #333;
+  min-width: 60px;
+}
+
+.current-word-text em {
+  color: #6c757d;
+  font-style: italic;
+}
+
+.suggestions-list {
+  display: grid;
+  grid-template-columns: repeat(auto-fill, minmax(80px, 1fr));
+  gap: 6px;
+  max-height: 200px;
+  overflow-y: auto;
+}
+
+.suggestion-btn {
+  background: #fff;
+  border: 1px solid #dee2e6;
+  border-radius: 4px;
+  padding: 8px 10px;
+  font-size: 0.85rem;
+  font-weight: 500;
+  font-family: monospace;
+  cursor: pointer;
+  transition: all 0.2s ease;
+  text-align: center;
+  color: #333;
+}
+
+.suggestion-btn:hover {
+  background: #e3f2fd;
+  border-color: #2196f3;
+  transform: translateY(-1px);
+  box-shadow: 0 2px 4px rgba(0, 0, 0, 0.1);
+}
+
+.suggestion-btn.current-word {
+  background: #e8f5e8;
+  border-color: #28a745;
+  color: #155724;
+  font-weight: 600;
+}
+
+.suggestion-btn.current-word:hover {
+  background: #d4edda;
+  border-color: #20c997;
+}
+
+.no-suggestions {
+  color: #6c757d;
+  font-style: italic;
+  text-align: center;
+  padding: 20px;
+  background: #f8f9fa;
+  border-radius: 6px;
+  border: 1px dashed #dee2e6;
+  margin: 0;
+}
+
 .clues-preview {
   margin-top: 25px;
   padding-top: 20px;
@@ -855,5 +965,21 @@
   
   .solution-words {
     min-width: unset;
+  }
+  
+  .suggestions-list {
+    grid-template-columns: repeat(auto-fill, minmax(70px, 1fr));
+    gap: 4px;
+    max-height: 150px;
+  }
+  
+  .current-word-display {
+    flex-direction: column;
+    align-items: flex-start;
+    gap: 4px;
+  }
+  
+  .suggestions-container {
+    padding: 10px;
   }
 } 

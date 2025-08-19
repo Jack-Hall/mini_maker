@@ -93,6 +93,44 @@
               Add Clue for Current Word
             </button>
           </div>
+
+          @if (allSolutions().length > 0 && currentWordPosition()) {
+            <div class="word-suggestions">
+              <h4>Word Suggestions</h4>
+              @if (availableWords().length > 0) {
+                <p class="suggestions-info">
+                  Select a word for the current 
+                  <strong>{{ currentWordPosition()!.direction === 'horizontal' ? 'across' : 'down' }}</strong> 
+                  position ({{ currentWordPosition()!.length }} letters):
+                </p>
+                <div class="suggestions-container">
+                  <div class="current-word-display">
+                    <span class="current-word-label">Current:</span>
+                    <span class="current-word-text">
+                      @if (currentWordPosition()!.text) {
+                        {{ currentWordPosition()!.text }}
+                      } @else {
+                        <em>(empty)</em>
+                      }
+                    </span>
+                  </div>
+                  <div class="suggestions-list">
+                    @for (word of availableWords(); track word; let i = $index) {
+                      <button 
+                        class="suggestion-btn"
+                        (click)="applyWordToGrid(word)"
+                        [class.current-word]="word === currentWordPosition()!.text"
+                        title="Click to apply this word">
+                        {{ word }}
+                      </button>
+                    }
+                  </div>
+                </div>
+              } @else {
+                <p class="no-suggestions">No word suggestions available for this position.</p>
+              }
+            </div>
+          }
         </div>
       </div>
     </div>
