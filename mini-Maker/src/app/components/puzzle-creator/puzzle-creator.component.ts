@@ -1,7 +1,7 @@
 import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { CrosswordService, GetWordsResponse, GridSolutionResponse } from '../../services/crossword.service';
+import { CrosswordService, GetWordsResponse, GridSolutionResponse, PatternMatchResponse } from '../../services/crossword.service';
 
 interface Clue {
   start_index: [number, number];
@@ -74,6 +74,9 @@ export class PuzzleCreatorComponent {
   protected readonly solutionError = signal<string | null>(null);
   protected readonly currentWordPosition = signal<WordPosition | null>(null);
   protected readonly showWordSuggestions = signal(false);
+  protected readonly patternMatches = signal<string[]>([]);
+  protected readonly showPatternMatches = signal(false);
+  protected readonly isLoadingPatterns = signal(false);
   
   protected readonly acrossClues = computed<Clue[]>(() => 
     this.clues().filter(clue => clue.direction === 'horizontal')
@@ -135,11 +138,25 @@ export class PuzzleCreatorComponent {
     return Array.from(words).sort();
   });
 
+  protected readonly shouldShowPatternMatches = computed<boolean>(() => {
+    const selectedWord = this.getSelectedWord();
+    if (!selectedWord || selectedWord.length < 2) {
+      return false;
+    }
+    
+    const filledLetters = selectedWord.split('').filter(char => char !== '_').length;
+    const missingLetters = selectedWord.split('').filter(char => char === '_').length;
+    
+    // Show if at least 1 letter is filled and 3 or fewer letters are missing
+    return filledLetters >= 1 && missingLetters <= 3 && missingLetters > 0;
+  });
+
   protected onCellClick(row: number, col: number): void {
     this.selectedCell.set({ row, col });
     this.activeCell.set({ row, col });
     this.isEditing.set(true);
     this.updateCurrentWordPosition(row, col);
+    this.checkAndLoadPatternMatches();
   }
 
   protected onCellRightClick(row: number, col: number, event: MouseEvent): void {
@@ -181,6 +198,9 @@ export class PuzzleCreatorComponent {
           this.focusFirstCellOfNextClue(clue);
         }
       }
+      
+      // Check for pattern matches after input
+      this.checkAndLoadPatternMatches();
     }
   }
 
@@ -242,7 +262,8 @@ export class PuzzleCreatorComponent {
           let pattern = ''
           for(let i = word[0][1]; i <= word[1][1]; i++){
             let char = this.grid()[word[0][0]][i] 
-            pattern += char ? char != '' : '_'
+            console.log(`char: ${char}`)
+            pattern += char != '' ? char  : '_'
           }
           return pattern
         }
@@ -255,7 +276,7 @@ export class PuzzleCreatorComponent {
           let pattern = ''
           for(let i = word[0][0]; i <= word[1][0]; i++){
             let char = this.grid()[i][word[0][1]] 
-            pattern += char ? char != '' : '_'
+            pattern += char != '' ? char  : '_'
           }
           return pattern
         }
@@ -266,8 +287,44 @@ export class PuzzleCreatorComponent {
   }
 
   protected findPatternMatches(): void {
+    //returns a list of words that could fit in the currently selected word. 
     const selected_word_pattern = this.getSelectedWord();
-    
+    console.log(selected_word_pattern)
+    this.crosswordService.getPatternMatch(selected_word_pattern).subscribe({
+      next: (response: PatternMatchResponse) => {
+        console.log(`matches for current word:${response.matches}`)
+        this.patternMatches.set(response.matches);
+      },
+      error: (e)=>{
+        console.log("Error loading pattern matches:", e);
+        this.patternMatches.set([]);
+      }
+    })
+  }
+
+  protected checkAndLoadPatternMatches(): void {
+    if (this.shouldShowPatternMatches()) {
+      this.isLoadingPatterns.set(true);
+      this.showPatternMatches.set(true);
+      
+      const selectedWordPattern = this.getSelectedWord();
+      if (selectedWordPattern) {
+        this.crosswordService.getPatternMatch(selectedWordPattern).subscribe({
+          next: (response: PatternMatchResponse) => {
+            this.patternMatches.set(response.matches);
+            this.isLoadingPatterns.set(false);
+          },
+          error: (e) => {
+            console.log("Error loading pattern matches:", e);
+            this.patternMatches.set([]);
+            this.isLoadingPatterns.set(false);
+          }
+        });
+      }
+    } else {
+      this.showPatternMatches.set(false);
+      this.patternMatches.set([]);
+    }
   }
 
   protected clearGrid(): void {
@@ -1068,5 +1125,60 @@ export class PuzzleCreatorComponent {
 
   protected closeWordSuggestions(): void {
     this.showWordSuggestions.set(false);
+  }
+
+  protected applyPatternMatchToGrid(word: string): void {
+    const cell = this.selectedCell();
+    if (!cell) return;
+    
+    const direction = this.activeDirection();
+    const grid = this.grid();
+    const newGrid = [...grid.map(row => [...row])];
+    
+    // Find the word that intersects this cell in the correct direction
+    if (direction === 'horizontal') {
+      const words = this.horizontalWords();
+      for (const wordBounds of words) {
+        if (wordBounds[0][0] === cell.row && wordBounds[0][1] <= cell.col && wordBounds[1][1] >= cell.col) {
+          // Apply the word to this horizontal position
+          for (let i = 0; i < word.length; i++) {
+            const col = wordBounds[0][1] + i;
+            if (col >= 0 && col < newGrid[wordBounds[0][0]].length) {
+              newGrid[wordBounds[0][0]][col] = word[i];
+            }
+          }
+          break;
+        }
+      }
+    } else if (direction === 'vertical') {
+      const words = this.verticalWords();
+      for (const wordBounds of words) {
+        if (wordBounds[0][1] === cell.col && wordBounds[0][0] <= cell.row && wordBounds[1][0] >= cell.row) {
+          // Apply the word to this vertical position
+          for (let i = 0; i < word.length; i++) {
+            const row = wordBounds[0][0] + i;
+            if (row >= 0 && row < newGrid.length) {
+              newGrid[row][wordBounds[0][1]] = word[i];
+            }
+          }
+          break;
+        }
+      }
+    }
+    
+    this.grid.set(newGrid);
+    this.showPatternMatches.set(false);
+    
+    // Refresh word detection
+    this.immediateWordRefresh();
+    this.updateWordsFromGrid();
+  }
+
+  protected togglePatternMatches(): void {
+    this.showPatternMatches.set(!this.showPatternMatches());
+  }
+
+  protected closePatternMatches(): void {
+    this.showPatternMatches.set(false);
   }
 } 

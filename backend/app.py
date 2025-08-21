@@ -172,17 +172,19 @@ def find_grid_solutions():
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
-@app.route('/api/match_pattern', methods=['GET'])
+@app.route('/api/match_pattern', methods=['POST'])
 def get_pattern_match():
     data = request.get_json()
-    if pattern not in data:
+    if "pattern" not in data:
         return jsonify({'error': 'provide a pattern'}), 400
-    pattern = data.pattern
+    pattern = data['pattern']
     if not isinstance(pattern, str):
         return jsonify({'error': 'pattern must be a string'}), 400
+    pattern = pattern.lower()
     matches = word_set.word_lookup(pattern)
-    macthes = list(matches)
+    matches = list(matches)
     matches = matches[0:128] 
+    print(matches)
     return jsonify({
         'matches': matches
     })

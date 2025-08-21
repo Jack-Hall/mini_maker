@@ -38,7 +38,7 @@ export interface GetWordsResponse {
 }
 
 export interface PatternMatchResponse {
-  macthes: string;
+  matches: string[];
 }
 
 @Injectable({
