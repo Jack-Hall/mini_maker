@@ -37,6 +37,10 @@ export interface GetWordsResponse {
   word_count: number;
 }
 
+export interface PatternMatchResponse {
+  macthes: string;
+}
+
 @Injectable({
   providedIn: 'root'
 })
@@ -61,6 +65,11 @@ export class CrosswordService {
   getWordsFromGrid(grid: string[][]): Observable<GetWordsResponse> {
     const request = { grid };
     return this.http.post<GetWordsResponse>(`${this.apiUrl}/get_words`, request);
+  }
+
+  getPatternMatch(pattern: string): Observable<PatternMatchResponse> {
+    const request = {pattern: pattern}
+    return this.http.post<PatternMatchResponse>(`${this.apiUrl}/match_pattern`, request);
   }
 
   parseGrid(grid: string[][]): CrosswordCell[][] {

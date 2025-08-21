@@ -172,6 +172,23 @@ def find_grid_solutions():
     except Exception as e:
         return jsonify({'error': f'Server error: {str(e)}'}), 500
 
+@app.route('/api/match_pattern', methods=['GET'])
+def get_pattern_match():
+    data = request.get_json()
+    if pattern not in data:
+        return jsonify({'error': 'provide a pattern'}), 400
+    pattern = data.pattern
+    if not isinstance(pattern, str):
+        return jsonify({'error': 'pattern must be a string'}), 400
+    matches = word_set.word_lookup(pattern)
+    macthes = list(matches)
+    matches = matches[0:128] 
+    return jsonify({
+        'matches': matches
+    })
+
+
+
 @app.route('/api/health', methods=['GET'])
 def health_check():
     return jsonify({'status': 'healthy', 'message': 'Crossword API is running'})

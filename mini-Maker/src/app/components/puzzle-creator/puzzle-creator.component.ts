@@ -37,6 +37,23 @@ export class PuzzleCreatorComponent {
     Array(5).fill(null).map(() => Array(5).fill(''))
   );
   protected readonly detectedWords = signal<[number, number][][]>([]);
+  protected readonly horizontalWords = computed<[number, number][][]>(() => {
+    let horizontal_words = this.detectedWords();
+    horizontal_words = horizontal_words.filter((word) => {
+     return word[0][0] == word[1][0]
+    })
+
+    return horizontal_words
+
+  })
+  protected readonly verticalWords = computed<[number, number][][]>(() => {
+    let verticalWords = this.detectedWords();
+    verticalWords = verticalWords.filter((word) => {
+     return word[0][1] == word[1][1]
+    })
+    return verticalWords
+
+  })
 
   constructor() {
     // Initial word detection when component loads
@@ -207,6 +224,50 @@ export class PuzzleCreatorComponent {
     // TODO: Implement puzzle saving functionality
     console.log('Saving puzzle:', this.grid());
     alert('Puzzle creator functionality coming soon!');
+  }
+
+
+  
+  protected getSelectedWord(): string {
+    const cell = this.selectedCell()
+    if(!cell){
+      return ''
+    }
+    const direction = this.activeDirection()
+    //find the word that intersects this cell in the correct direction
+    if( direction == 'horizontal'){
+      const words = this.horizontalWords();
+      for(const word of words){
+        if(word[0][0] == cell.row && word[0][1] <= cell.col && word[1][1] >= cell.col ){
+          let pattern = ''
+          for(let i = word[0][1]; i <= word[1][1]; i++){
+            let char = this.grid()[word[0][0]][i] 
+            pattern += char ? char != '' : '_'
+          }
+          return pattern
+        }
+      }
+    }
+    if( direction == 'vertical'){
+      const words = this.verticalWords();
+      for(const word of words){
+        if(word[0][1] == cell.col && word[0][0] <= cell.row && word[1][0] >= cell.row ){
+          let pattern = ''
+          for(let i = word[0][0]; i <= word[1][0]; i++){
+            let char = this.grid()[i][word[0][1]] 
+            pattern += char ? char != '' : '_'
+          }
+          return pattern
+        }
+      }
+    }
+
+    return ""
+  }
+
+  protected findPatternMatches(): void {
+    const selected_word_pattern = this.getSelectedWord();
+    
   }
 
   protected clearGrid(): void {
