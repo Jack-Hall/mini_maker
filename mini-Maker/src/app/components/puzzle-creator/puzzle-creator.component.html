@@ -53,45 +53,12 @@
       </div>
 
       <!-- Pattern Matching Component -->
-      @if (showPatternMatches()) {
-        <div class="pattern-matches-container">
-          <div class="pattern-matches-header">
-            <h4>Word Suggestions for Pattern: "{{ getSelectedWord() }}"</h4>
-            <button 
-              class="close-pattern-btn" 
-              (click)="closePatternMatches()"
-              title="Close suggestions">
-              ✕
-            </button>
-          </div>
-          
-          <div class="pattern-matches-content">
-            @if (isLoadingPatterns()) {
-              <div class="loading-pattern">
-                <span>Loading word suggestions...</span>
-              </div>
-            } @else if (patternMatches().length > 0) {
-              <div class="pattern-matches-info">
-                <p>Found {{ patternMatches().length }} word{{ patternMatches().length === 1 ? '' : 's' }} that match this pattern:</p>
-              </div>
-              <div class="pattern-matches-list">
-                @for (match of patternMatches(); track match; let i = $index) {
-                  <button 
-                    class="pattern-match-btn"
-                    (click)="applyPatternMatchToGrid(match)"
-                    title="Click to apply '{{ match }}' to the grid">
-                    {{ match }}
-                  </button>
-                }
-              </div>
-            } @else {
-              <div class="no-pattern-matches">
-                <p>No word suggestions found for this pattern.</p>
-              </div>
-            }
-          </div>
-        </div>
-      }
+      <app-pattern-matcher
+        [pattern]="currentPattern()"
+        [isVisible]="shouldShowPatternMatches()"
+        (wordSelected)="onPatternMatchWordSelected($event)"
+        (closed)="onPatternMatchClosed()">
+      </app-pattern-matcher>
       
       <div class="creator-sidebar">
         <div class="info-panel">

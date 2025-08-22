@@ -2,6 +2,7 @@ import { Component, signal, computed, inject } from '@angular/core';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
 import { CrosswordService, GetWordsResponse, GridSolutionResponse, PatternMatchResponse } from '../../services/crossword.service';
+import { PatternMatcherComponent } from '../pattern-matcher/pattern-matcher';
 
 interface Clue {
   start_index: [number, number];
@@ -26,7 +27,7 @@ interface SelectedWord {
 @Component({
   selector: 'app-puzzle-creator',
   standalone: true,
-  imports: [CommonModule, FormsModule],
+  imports: [CommonModule, FormsModule, PatternMatcherComponent],
   templateUrl: './puzzle-creator.component.html',
   styleUrl: './puzzle-creator.component.css'
 })
@@ -74,9 +75,6 @@ export class PuzzleCreatorComponent {
   protected readonly solutionError = signal<string | null>(null);
   protected readonly currentWordPosition = signal<WordPosition | null>(null);
   protected readonly showWordSuggestions = signal(false);
-  protected readonly patternMatches = signal<string[]>([]);
-  protected readonly showPatternMatches = signal(false);
-  protected readonly isLoadingPatterns = signal(false);
   
   protected readonly acrossClues = computed<Clue[]>(() => 
     this.clues().filter(clue => clue.direction === 'horizontal')
@@ -138,17 +136,30 @@ export class PuzzleCreatorComponent {
     return Array.from(words).sort();
   });
 
+  protected readonly currentPattern = computed<string>(() => {
+    const pattern = this.getSelectedWord();
+    console.log('Current pattern computed:', pattern);
+    return pattern;
+  });
+
   protected readonly shouldShowPatternMatches = computed<boolean>(() => {
-    const selectedWord = this.getSelectedWord();
+    const selectedWord = this.currentPattern();
+    console.log('Checking shouldShowPatternMatches for:', selectedWord);
+    
     if (!selectedWord || selectedWord.length < 2) {
+      console.log('Pattern too short or empty, not showing matches');
       return false;
     }
     
     const filledLetters = selectedWord.split('').filter(char => char !== '_').length;
     const missingLetters = selectedWord.split('').filter(char => char === '_').length;
     
+    console.log(`shouldShowPatternMatches - Pattern: ${selectedWord}, Filled: ${filledLetters}, Missing: ${missingLetters}`);
+    
     // Show if at least 1 letter is filled and 3 or fewer letters are missing
-    return filledLetters >= 1 && missingLetters <= 3 && missingLetters > 0;
+    const shouldShow = filledLetters >= 1 && missingLetters <= 3 && missingLetters > 0;
+    console.log('Should show pattern matches:', shouldShow);
+    return shouldShow;
   });
 
   protected onCellClick(row: number, col: number): void {
@@ -156,7 +167,6 @@ export class PuzzleCreatorComponent {
     this.activeCell.set({ row, col });
     this.isEditing.set(true);
     this.updateCurrentWordPosition(row, col);
-    this.checkAndLoadPatternMatches();
   }
 
   protected onCellRightClick(row: number, col: number, event: MouseEvent): void {
@@ -198,9 +208,6 @@ export class PuzzleCreatorComponent {
           this.focusFirstCellOfNextClue(clue);
         }
       }
-      
-      // Check for pattern matches after input
-      this.checkAndLoadPatternMatches();
     }
   }
 
@@ -293,38 +300,19 @@ export class PuzzleCreatorComponent {
     this.crosswordService.getPatternMatch(selected_word_pattern).subscribe({
       next: (response: PatternMatchResponse) => {
         console.log(`matches for current word:${response.matches}`)
-        this.patternMatches.set(response.matches);
       },
       error: (e)=>{
         console.log("Error loading pattern matches:", e);
-        this.patternMatches.set([]);
       }
     })
   }
 
-  protected checkAndLoadPatternMatches(): void {
-    if (this.shouldShowPatternMatches()) {
-      this.isLoadingPatterns.set(true);
-      this.showPatternMatches.set(true);
-      
-      const selectedWordPattern = this.getSelectedWord();
-      if (selectedWordPattern) {
-        this.crosswordService.getPatternMatch(selectedWordPattern).subscribe({
-          next: (response: PatternMatchResponse) => {
-            this.patternMatches.set(response.matches);
-            this.isLoadingPatterns.set(false);
-          },
-          error: (e) => {
-            console.log("Error loading pattern matches:", e);
-            this.patternMatches.set([]);
-            this.isLoadingPatterns.set(false);
-          }
-        });
-      }
-    } else {
-      this.showPatternMatches.set(false);
-      this.patternMatches.set([]);
-    }
+  protected onPatternMatchWordSelected(word: string): void {
+    this.applyPatternMatchToGrid(word);
+  }
+
+  protected onPatternMatchClosed(): void {
+    // Pattern matcher closed - no specific action needed
   }
 
   protected clearGrid(): void {
@@ -1167,18 +1155,9 @@ export class PuzzleCreatorComponent {
     }
     
     this.grid.set(newGrid);
-    this.showPatternMatches.set(false);
     
     // Refresh word detection
     this.immediateWordRefresh();
     this.updateWordsFromGrid();
-  }
-
-  protected togglePatternMatches(): void {
-    this.showPatternMatches.set(!this.showPatternMatches());
-  }
-
-  protected closePatternMatches(): void {
-    this.showPatternMatches.set(false);
   }
 } 
