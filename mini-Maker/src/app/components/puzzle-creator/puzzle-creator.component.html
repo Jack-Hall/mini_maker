@@ -62,24 +62,8 @@
       
       <div class="creator-sidebar">
         <div class="info-panel">
-          <h3>Puzzle Creator</h3>
-          <p>This feature is currently under development.</p>
-          <p>You can edit the grid above, but saving functionality will be implemented soon.</p>
-          
-          <div class="grid-info">
-            <h4>Grid Information</h4>
-            <p><strong>Size:</strong> {{ grid().length }} × {{ grid()[0].length }}</p>
-            <p><strong>Total Cells:</strong> {{ grid().length * grid()[0].length }}</p>
-            <p><strong>Black Cells:</strong> {{ (grid() | json).split('"#"').length - 1 }}</p>
-            <p><strong>Detected Words:</strong> 
-            @if (isUpdatingWords()) {
-              <span class="updating">Updating...</span>
-            } @else {
-              {{ getDetectedWordCount() }}
-            }
-          </p>
-            <p><strong>Direction:</strong> {{ activeDirection() === 'horizontal' ? 'Across' : 'Down' }}</p>
-          </div>
+   
+  
           
           <div class="controls-info">
             <h4>Controls</h4>
@@ -93,7 +77,7 @@
 
           <div class="clue-actions">
             <h4>Clue Management</h4>
-            <p class="clue-info">Clues are automatically generated when you add/remove black cells. Click to manually add more.</p>
+
             <button 
               class="add-clue-btn" 
               (click)="addClue()"
