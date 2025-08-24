@@ -41,10 +41,10 @@ export class PuzzleCreatorComponent {
   protected readonly horizontalWords = computed<[number, number][][]>(() => {
     let horizontal_words = this.detectedWords();
     horizontal_words = horizontal_words.filter((word) => {
-     return word[0][0] == word[1][0]
+     return word[0][0] == word[1][0];
     })
 
-    return horizontal_words
+    return horizontal_words;
 
   })
   protected readonly verticalWords = computed<[number, number][][]>(() => {
