@@ -1,15 +1,4 @@
-import 'zone.js/testing';
-import { getTestBed } from '@angular/core/testing';
-import {
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting,
-} from '@angular/platform-browser-dynamic/testing';
-
-// Initialize the Angular testing environment
-getTestBed().initTestEnvironment(
-  BrowserDynamicTestingModule,
-  platformBrowserDynamicTesting(),
-);
+// Test setup utilities - Angular CLI handles the main test environment setup
 
 // Global test setup
 beforeEach(() => {
@@ -18,7 +7,7 @@ beforeEach(() => {
 });
 
 // Global test utilities
-(global as any).expectAsync = (promise: Promise<any>) => {
+(globalThis as any).expectAsync = (promise: Promise<any>) => {
   return expectAsync(promise);
 };
 
@@ -45,7 +34,7 @@ window.addEventListener('unhandledrejection', (event) => {
 });
 
 // Mock IntersectionObserver for tests that might need it
-(global as any).IntersectionObserver = class IntersectionObserver {
+(globalThis as any).IntersectionObserver = class IntersectionObserver {
   constructor() {}
   observe() {}
   unobserve() {}
@@ -53,7 +42,7 @@ window.addEventListener('unhandledrejection', (event) => {
 };
 
 // Mock ResizeObserver for tests that might need it
-(global as any).ResizeObserver = class ResizeObserver {
+(globalThis as any).ResizeObserver = class ResizeObserver {
   constructor() {}
   observe() {}
   unobserve() {}

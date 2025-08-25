@@ -331,7 +331,7 @@ describe('PatternMatcherComponent', () => {
     it('should emit wordSelected when word is selected', () => {
       spyOn(component.wordSelected, 'emit');
       
-      component.onWordSelect('CAT');
+      (component as any).onWordSelect('CAT');
       
       expect(component.wordSelected.emit).toHaveBeenCalledWith('CAT');
     });
@@ -339,7 +339,7 @@ describe('PatternMatcherComponent', () => {
     it('should emit closed when component is closed', () => {
       spyOn(component.closed, 'emit');
       
-      component.onClose();
+      (component as any).onClose();
       
       expect(component.closed.emit).toHaveBeenCalled();
     });
@@ -348,7 +348,7 @@ describe('PatternMatcherComponent', () => {
       spyOn(component.wordSelected, 'emit');
       
       const words = ['CAT', 'DOG', 'BAT'];
-      words.forEach(word => component.onWordSelect(word));
+      words.forEach(word => (component as any).onWordSelect(word));
       
       expect(component.wordSelected.emit).toHaveBeenCalledTimes(3);
       expect(component.wordSelected.emit).toHaveBeenCalledWith('CAT');
@@ -394,7 +394,7 @@ describe('PatternMatcherComponent', () => {
     });
 
     it('should handle word clicks', () => {
-      spyOn(component, 'onWordSelect');
+      spyOn(component as any, 'onWordSelect');
       
       component.isVisible = true;
       (component as any).patternMatches.set(['CAT', 'COT', 'CUT']);
@@ -405,7 +405,7 @@ describe('PatternMatcherComponent', () => {
       
       if (firstWordElement) {
         firstWordElement.click();
-        expect(component.onWordSelect).toHaveBeenCalled();
+        expect((component as any).onWordSelect).toHaveBeenCalled();
       }
     });
 

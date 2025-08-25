@@ -424,8 +424,8 @@ describe('PuzzleCreatorComponent', () => {
       harness.clickButtonByText('Clear Grid');
       
       const grid = (component as any).grid();
-      grid.forEach(row => {
-        row.forEach(cell => {
+      grid.forEach((row: string[]) => {
+        row.forEach((cell: string) => {
           expect(cell).toBe('');
         });
       });
