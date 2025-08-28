@@ -1,8 +1,7 @@
 import { ComponentFixture, TestBed, fakeAsync, tick } from '@angular/core/testing';
 import { CommonModule } from '@angular/common';
 import { FormsModule } from '@angular/forms';
-import { Router } from '@angular/router';
-import { Location } from '@angular/common';
+import { provideHttpClient } from '@angular/common/http';
 import { Component } from '@angular/core';
 
 import { PuzzleCreatorComponent } from '../../app/components/puzzle-creator/puzzle-creator.component';
@@ -45,7 +44,8 @@ describe('Crossword Workflow Integration Tests', () => {
         PatternMatcherComponent
       ],
       providers: [
-        { provide: CrosswordService, useValue: mockService }
+        { provide: CrosswordService, useValue: mockService },
+        provideHttpClient()
       ]
     }).compileComponents();
 

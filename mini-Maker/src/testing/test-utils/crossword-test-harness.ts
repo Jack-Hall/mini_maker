@@ -83,8 +83,19 @@ export class CrosswordTestHarness {
         cancelable: true,
         button: 2
       });
+      
+      // Prevent the default context menu
+      event.preventDefault = jasmine.createSpy('preventDefault');
+      
       cell.nativeElement.dispatchEvent(event);
       this.fixture.detectChanges();
+      
+      // Also trigger the component's right-click handler directly if needed
+      const component = this.fixture.componentInstance;
+      if (component && typeof component.onCellRightClick === 'function') {
+        component.onCellRightClick(row, col, event);
+        this.fixture.detectChanges();
+      }
     }
   }
 

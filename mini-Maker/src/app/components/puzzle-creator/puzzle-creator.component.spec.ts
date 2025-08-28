@@ -99,16 +99,20 @@ describe('PuzzleCreatorComponent', () => {
       expect(grid[0][0]).toBe('A');
     });
 
-    it('should handle right-click to toggle black cells', () => {
+    it('should handle right-click to toggle black cells', fakeAsync(() => {
       harness.rightClickCell(1, 1);
+      tick();
       
-      const grid = (component as any).grid();
+      let grid = (component as any).grid();
       expect(grid[1][1]).toBe('#');
       
       // Right-click again to toggle back
       harness.rightClickCell(1, 1);
+      tick();
+      
+      grid = (component as any).grid();
       expect(grid[1][1]).toBe('');
-    });
+    }));
 
     it('should focus cell when clicked', () => {
       harness.focusCell(2, 3);
@@ -550,12 +554,16 @@ describe('PuzzleCreatorComponent', () => {
       expect((component as any).isFindingSolutions()).toBeTruthy();
     });
 
-    it('should show loading state when updating words', () => {
+    it('should show loading state when updating words', fakeAsync(() => {
       mockService.setDelay('getWords', 1000);
       
       harness.setCellValue(0, 0, 'A');
+      tick(100); // Allow debounce timer to trigger
       
       expect((component as any).isUpdatingWords()).toBeTruthy();
-    });
+      
+      tick(1000); // Complete the API call
+      expect((component as any).isUpdatingWords()).toBeFalsy();
+    }));
   });
 });
