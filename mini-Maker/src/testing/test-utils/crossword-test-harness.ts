@@ -103,6 +103,10 @@ export class CrosswordTestHarness {
    * Focus a specific cell
    */
   focusCell(row: number, col: number): void {
+    // First click the cell to set it as active
+    this.clickCell(row, col);
+    
+    // Then focus the input
     const input = this.getCellInput(row, col);
     if (input) {
       input.focus();

@@ -455,30 +455,35 @@ describe('PuzzleCreatorComponent', () => {
   });
 
   describe('CSS Classes and Visual State', () => {
-    it('should apply correct CSS classes to active cell', () => {
+    it('should apply correct CSS classes to active cell', fakeAsync(() => {
       harness.focusCell(1, 1);
+      tick();
       
       expect(harness.isCellActive(1, 1)).toBeTruthy();
-    });
+    }));
 
-    it('should apply correct CSS classes to highlighted word', () => {
+    it('should apply correct CSS classes to highlighted word', fakeAsync(() => {
       // Set up a word and focus on it
       harness.setCellValue(0, 0, 'C');
       harness.setCellValue(0, 1, 'A');
       harness.setCellValue(0, 2, 'T');
+      tick(100); // Allow word detection
+      
       harness.focusCell(0, 1);
+      tick();
       
       // Cells in the same word should be highlighted
       expect(harness.isCellHighlighted(0, 0)).toBeTruthy();
       expect(harness.isCellHighlighted(0, 1)).toBeTruthy();
       expect(harness.isCellHighlighted(0, 2)).toBeTruthy();
-    });
+    }));
 
-    it('should apply correct CSS classes to blocked cells', () => {
+    it('should apply correct CSS classes to blocked cells', fakeAsync(() => {
       harness.rightClickCell(2, 2); // Make cell black
+      tick();
       
       expect(harness.isCellBlocked(2, 2)).toBeTruthy();
-    });
+    }));
   });
 
   describe('Word Suggestions', () => {
